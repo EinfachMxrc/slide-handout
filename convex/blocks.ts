@@ -43,9 +43,9 @@ const blockFontSize = v.union(
  * Owner view: full block list, ordered by LexoRank.
  */
 export const list = query({
-  args: { tokenHash: v.union(v.string(), v.null()), handoutId: v.id("handouts") },
-  handler: async (ctx, { tokenHash, handoutId }) => {
-    const user = await requireUser(ctx, tokenHash);
+  args: { userId: v.union(v.id("users"), v.null()), handoutId: v.id("handouts") },
+  handler: async (ctx, { userId, handoutId }) => {
+    const user = await requireUser(ctx, userId);
     await assertHandoutOwner(ctx, user, handoutId);
     return await ctx.db
       .query("blocks")
@@ -136,7 +136,7 @@ export const alwaysVisibleByHandout = query({
 
 export const create = mutation({
   args: {
-    tokenHash: v.union(v.string(), v.null()),
+    userId: v.union(v.id("users"), v.null()),
     handoutId: v.id("handouts"),
     title: v.string(),
     markdown: v.string(),
@@ -152,7 +152,7 @@ export const create = mutation({
     terminalLabel: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const user = await requireUser(ctx, args.tokenHash);
+    const user = await requireUser(ctx, args.userId);
     assertNotDemo(user);
     await assertHandoutOwner(ctx, user, args.handoutId);
 
@@ -188,7 +188,7 @@ export const create = mutation({
 
 export const update = mutation({
   args: {
-    tokenHash: v.union(v.string(), v.null()),
+    userId: v.union(v.id("users"), v.null()),
     id: v.id("blocks"),
     title: v.optional(v.string()),
     markdown: v.optional(v.string()),
@@ -203,8 +203,8 @@ export const update = mutation({
     terminalVariant: v.optional(blockTerminalVariant),
     terminalLabel: v.optional(v.string()),
   },
-  handler: async (ctx, { tokenHash, id, ...patch }) => {
-    const user = await requireUser(ctx, tokenHash);
+  handler: async (ctx, { userId, id, ...patch }) => {
+    const user = await requireUser(ctx, userId);
     assertNotDemo(user);
     const block = await ctx.db.get(id);
     if (!block) throw new Error("BLOCK_NOT_FOUND");
@@ -214,9 +214,9 @@ export const update = mutation({
 });
 
 export const remove = mutation({
-  args: { tokenHash: v.union(v.string(), v.null()), id: v.id("blocks") },
-  handler: async (ctx, { tokenHash, id }) => {
-    const user = await requireUser(ctx, tokenHash);
+  args: { userId: v.union(v.id("users"), v.null()), id: v.id("blocks") },
+  handler: async (ctx, { userId, id }) => {
+    const user = await requireUser(ctx, userId);
     assertNotDemo(user);
     const block = await ctx.db.get(id);
     if (!block) return;
@@ -226,9 +226,9 @@ export const remove = mutation({
 });
 
 export const duplicate = mutation({
-  args: { tokenHash: v.union(v.string(), v.null()), id: v.id("blocks") },
-  handler: async (ctx, { tokenHash, id }) => {
-    const user = await requireUser(ctx, tokenHash);
+  args: { userId: v.union(v.id("users"), v.null()), id: v.id("blocks") },
+  handler: async (ctx, { userId, id }) => {
+    const user = await requireUser(ctx, userId);
     assertNotDemo(user);
     const src = await ctx.db.get(id);
     if (!src) throw new Error("BLOCK_NOT_FOUND");
@@ -273,13 +273,13 @@ export const duplicate = mutation({
  */
 export const reorder = mutation({
   args: {
-    tokenHash: v.union(v.string(), v.null()),
+    userId: v.union(v.id("users"), v.null()),
     id: v.id("blocks"),
     prevRank: v.union(v.string(), v.null()),
     nextRank: v.union(v.string(), v.null()),
   },
-  handler: async (ctx, { tokenHash, id, prevRank, nextRank }) => {
-    const user = await requireUser(ctx, tokenHash);
+  handler: async (ctx, { userId, id, prevRank, nextRank }) => {
+    const user = await requireUser(ctx, userId);
     assertNotDemo(user);
     const block = await ctx.db.get(id);
     if (!block) throw new Error("BLOCK_NOT_FOUND");

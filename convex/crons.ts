@@ -22,11 +22,12 @@ export const sweepStaleSessions = internalMutation({
       }
     }
 
-    // 2. Delete expired auth sessions (with a grace period).
-    const allAuth = await ctx.db.query("sessions").collect();
-    for (const s of allAuth) {
-      if (s.expiresAt + EXPIRED_AUTH_GRACE_MS < now) {
-        await ctx.db.delete(s._id);
+    // 2. Delete expired add-in tokens (with a grace period).
+    //    Auth.js-Web-Sessions laufen als JWT im Cookie — kein GC nötig.
+    const tokens = await ctx.db.query("addinTokens").collect();
+    for (const t of tokens) {
+      if (t.expiresAt + EXPIRED_AUTH_GRACE_MS < now) {
+        await ctx.db.delete(t._id);
       }
     }
 

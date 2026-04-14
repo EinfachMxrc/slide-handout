@@ -32,6 +32,7 @@ CONVEX_URL = env("CONVEX_URL")
 CONVEX_KEY = env("CONVEX_DEPLOY_KEY")
 SITE_URL = env("SITE_URL")
 S3_PUBLIC = env("S3_PUBLIC_BASE_URL", required=False)
+AUTH_SECRET = env("AUTH_SECRET")  # `openssl rand -base64 32`
 
 # 1. Wipe and recreate the remote dir.
 sh(f"rm -rf {REMOTE_DIR} && mkdir -p {REMOTE_DIR}", label=f"reset {REMOTE_DIR}")
@@ -44,6 +45,8 @@ env_content = f"""CONVEX_DEPLOY_KEY={CONVEX_KEY}
 NEXT_PUBLIC_CONVEX_URL={CONVEX_URL}
 NEXT_PUBLIC_SITE_URL={SITE_URL}
 NEXT_PUBLIC_S3_PUBLIC_BASE_URL={S3_PUBLIC}
+AUTH_SECRET={AUTH_SECRET}
+AUTH_TRUST_HOST=1
 NODE_ENV=production
 """
 put_str(f"{REMOTE_DIR}/.env", env_content, mode=0o600)

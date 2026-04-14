@@ -17,9 +17,9 @@ function generatePairingCode(): string {
 }
 
 export const start = mutation({
-  args: { tokenHash: v.union(v.string(), v.null()), handoutId: v.id("handouts") },
-  handler: async (ctx, { tokenHash, handoutId }) => {
-    const user = await requireUser(ctx, tokenHash);
+  args: { userId: v.union(v.id("users"), v.null()), handoutId: v.id("handouts") },
+  handler: async (ctx, { userId, handoutId }) => {
+    const user = await requireUser(ctx, userId);
     await assertHandoutOwner(ctx, user, handoutId);
 
     // End any previous live session for this handout (one-active-at-a-time).
@@ -61,15 +61,15 @@ export const start = mutation({
 /** Update non-critical session settings (currently just syncMode). */
 export const updateSettings = mutation({
   args: {
-    tokenHash: v.union(v.string(), v.null()),
+    userId: v.union(v.id("users"), v.null()),
     presenterSessionId: v.id("presenterSessions"),
     syncMode: v.optional(
       v.union(v.literal("auto"), v.literal("hybrid"), v.literal("manual")),
     ),
     currentSlide: v.optional(v.number()),
   },
-  handler: async (ctx, { tokenHash, presenterSessionId, ...patch }) => {
-    const user = await requireUser(ctx, tokenHash);
+  handler: async (ctx, { userId, presenterSessionId, ...patch }) => {
+    const user = await requireUser(ctx, userId);
     const session = await ctx.db.get(presenterSessionId);
     if (!session) return;
     await assertHandoutOwner(ctx, user, session.handoutId);
@@ -158,11 +158,11 @@ export const advanceSlideByPairing = mutation({
 
 export const end = mutation({
   args: {
-    tokenHash: v.union(v.string(), v.null()),
+    userId: v.union(v.id("users"), v.null()),
     presenterSessionId: v.id("presenterSessions"),
   },
-  handler: async (ctx, { tokenHash, presenterSessionId }) => {
-    const user = await requireUser(ctx, tokenHash);
+  handler: async (ctx, { userId, presenterSessionId }) => {
+    const user = await requireUser(ctx, userId);
     const session = await ctx.db.get(presenterSessionId);
     if (!session) return;
     await assertHandoutOwner(ctx, user, session.handoutId);
@@ -175,12 +175,12 @@ export const end = mutation({
 
 export const advanceSlide = mutation({
   args: {
-    tokenHash: v.union(v.string(), v.null()),
+    userId: v.union(v.id("users"), v.null()),
     presenterSessionId: v.id("presenterSessions"),
     slideNumber: v.number(),
   },
-  handler: async (ctx, { tokenHash, presenterSessionId, slideNumber }) => {
-    const user = await requireUser(ctx, tokenHash);
+  handler: async (ctx, { userId, presenterSessionId, slideNumber }) => {
+    const user = await requireUser(ctx, userId);
     const session = await ctx.db.get(presenterSessionId);
     if (!session) throw new Error("SESSION_NOT_FOUND");
     await assertHandoutOwner(ctx, user, session.handoutId);
@@ -234,11 +234,11 @@ export const publicState = query({
 
 export const getForOwner = query({
   args: {
-    tokenHash: v.union(v.string(), v.null()),
+    userId: v.union(v.id("users"), v.null()),
     presenterSessionId: v.id("presenterSessions"),
   },
-  handler: async (ctx, { tokenHash, presenterSessionId }) => {
-    const user = await requireUser(ctx, tokenHash);
+  handler: async (ctx, { userId, presenterSessionId }) => {
+    const user = await requireUser(ctx, userId);
     const session = await ctx.db.get(presenterSessionId);
     if (!session) return null;
     await assertHandoutOwner(ctx, user, session.handoutId);
@@ -247,9 +247,9 @@ export const getForOwner = query({
 });
 
 export const listMine = query({
-  args: { tokenHash: v.union(v.string(), v.null()) },
-  handler: async (ctx, { tokenHash }) => {
-    const user = await requireUser(ctx, tokenHash);
+  args: { userId: v.union(v.id("users"), v.null()) },
+  handler: async (ctx, { userId }) => {
+    const user = await requireUser(ctx, userId);
     return await ctx.db
       .query("presenterSessions")
       .withIndex("by_owner_status", (q) => q.eq("ownerId", user._id))

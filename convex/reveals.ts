@@ -38,12 +38,12 @@ export const streamForSession = query({
 
 export const reveal = mutation({
   args: {
-    tokenHash: v.union(v.string(), v.null()),
+    userId: v.union(v.id("users"), v.null()),
     presenterSessionId: v.id("presenterSessions"),
     blockId: v.id("blocks"),
   },
-  handler: async (ctx, { tokenHash, presenterSessionId, blockId }) => {
-    const user = await requireUser(ctx, tokenHash);
+  handler: async (ctx, { userId, presenterSessionId, blockId }) => {
+    const user = await requireUser(ctx, userId);
     const session = await ctx.db.get(presenterSessionId);
     if (!session) throw new Error("SESSION_NOT_FOUND");
     if (session.status !== "live") throw new Error("SESSION_NOT_LIVE");
@@ -74,11 +74,11 @@ export const reveal = mutation({
 /** Reveal every block in the handout (excluding `always`). Idempotent. */
 export const revealAll = mutation({
   args: {
-    tokenHash: v.union(v.string(), v.null()),
+    userId: v.union(v.id("users"), v.null()),
     presenterSessionId: v.id("presenterSessions"),
   },
-  handler: async (ctx, { tokenHash, presenterSessionId }) => {
-    const user = await requireUser(ctx, tokenHash);
+  handler: async (ctx, { userId, presenterSessionId }) => {
+    const user = await requireUser(ctx, userId);
     const session = await ctx.db.get(presenterSessionId);
     if (!session) throw new Error("SESSION_NOT_FOUND");
     if (session.status !== "live") throw new Error("SESSION_NOT_LIVE");
@@ -114,11 +114,11 @@ export const revealAll = mutation({
 /** Hide every reveal for this session (returns to a clean slate). */
 export const hideAll = mutation({
   args: {
-    tokenHash: v.union(v.string(), v.null()),
+    userId: v.union(v.id("users"), v.null()),
     presenterSessionId: v.id("presenterSessions"),
   },
-  handler: async (ctx, { tokenHash, presenterSessionId }) => {
-    const user = await requireUser(ctx, tokenHash);
+  handler: async (ctx, { userId, presenterSessionId }) => {
+    const user = await requireUser(ctx, userId);
     const session = await ctx.db.get(presenterSessionId);
     if (!session) return;
     await assertHandoutOwner(ctx, user, session.handoutId);
@@ -134,12 +134,12 @@ export const hideAll = mutation({
 
 export const unreveal = mutation({
   args: {
-    tokenHash: v.union(v.string(), v.null()),
+    userId: v.union(v.id("users"), v.null()),
     presenterSessionId: v.id("presenterSessions"),
     blockId: v.id("blocks"),
   },
-  handler: async (ctx, { tokenHash, presenterSessionId, blockId }) => {
-    const user = await requireUser(ctx, tokenHash);
+  handler: async (ctx, { userId, presenterSessionId, blockId }) => {
+    const user = await requireUser(ctx, userId);
     const session = await ctx.db.get(presenterSessionId);
     if (!session) return;
     await assertHandoutOwner(ctx, user, session.handoutId);

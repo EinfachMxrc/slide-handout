@@ -36,6 +36,7 @@ export default function RegisterPage(): React.ReactElement {
         }
         return;
       }
+      // Auth.js hat uns direkt eingeloggt. Dashboard ansteuern.
       router.push("/dashboard");
       router.refresh();
     } finally {
@@ -90,7 +91,7 @@ export default function RegisterPage(): React.ReactElement {
         </form>
         <p className="mt-4 text-center text-sm text-navy-700 dark:text-navy-100">
           Schon registriert?{" "}
-          <Link href="/login" className="text-teal-500 hover:underline">
+          <Link href="/login" className="text-teal-400 hover:underline">
             Anmelden
           </Link>
         </p>

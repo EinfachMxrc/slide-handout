@@ -43,7 +43,6 @@ export function SessionShell({
   const [sessionId, setSessionId] = useState<Id<"presenterSessions"> | null>(
     null,
   );
-  const [pairingCode, setPairingCode] = useState<string | null>(null);
   const [syncMode, setSyncMode] = useState<SyncMode>("manual");
   const [tab, setTab] = useState<"control" | "preview">("control");
   const [starting, setStarting] = useState(false);
@@ -110,9 +109,8 @@ export function SessionShell({
         setError("Konnte Session nicht starten.");
         return;
       }
-      const data = (await res.json()) as { id: string; pairingCode?: string };
+      const data = (await res.json()) as { id: string };
       setSessionId(data.id as Id<"presenterSessions">);
-      if (data.pairingCode) setPairingCode(data.pairingCode);
     } finally {
       setStarting(false);
     }
@@ -123,7 +121,6 @@ export function SessionShell({
     if (!confirm("Session beenden?")) return;
     await fetch(`/api/presenter-sessions/${sessionId}`, { method: "DELETE" });
     setSessionId(null);
-    setPairingCode(null);
   }
 
   async function setSlide(n: number): Promise<void> {
@@ -226,7 +223,6 @@ export function SessionShell({
       {tab === "control" ? (
         <ControlTab
           live={live}
-          pairingCode={pairingCode}
           currentSlide={currentSlide}
           onSlideJump={async () => {
             const n = Number(slideJump);
@@ -383,7 +379,6 @@ function StatCard({
 
 function ControlTab(props: {
   live: boolean;
-  pairingCode: string | null;
   currentSlide: number;
   onSlideJump: () => void;
   slideJumpValue: string;
@@ -401,7 +396,7 @@ function ControlTab(props: {
   return (
     <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
       <SlideNav {...props} />
-      <PowerPointCard pairingCode={props.pairingCode} live={props.live} />
+      <PowerPointCard live={props.live} />
       <div className="lg:col-span-2">
         <BlockList
           blocks={props.blocks}
@@ -527,10 +522,9 @@ function SlideNav({
 }
 
 function PowerPointCard({
-  pairingCode,
   live,
 }: {
-  pairingCode: string | null;
+  pairingCode?: string | null;
   live: boolean;
 }): React.ReactElement {
   return (
@@ -542,20 +536,11 @@ function PowerPointCard({
         Add-in und Live-Verbindung
       </h2>
       <p className="mt-2 text-sm text-navy-100">
-        Das Add-in läuft über dieselbe Web-App. Nach der Installation melden
-        Sie sich im Taskpane an und wählen dort diese Session aus.
+        Der Add-in läuft über dieselbe Web-App. Installieren, im Taskpane mit
+        deinem Slide-Handout-Account anmelden — dann erscheint{" "}
+        {live ? "diese Session" : "eine laufende Session"} direkt in der
+        Auswahl. Folienwechsel werden automatisch gesendet.
       </p>
-
-      {live && pairingCode && (
-        <div className="mt-5 rounded-card border border-teal-400/30 bg-teal-400/10 px-4 py-4">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-teal-300">
-            Pairing-Code
-          </p>
-          <p className="mt-1 font-mono text-3xl font-semibold tracking-[0.3em] text-white">
-            {pairingCode.slice(0, 3)} {pairingCode.slice(3)}
-          </p>
-        </div>
-      )}
 
       <div className="mt-5 flex flex-wrap gap-2">
         <a

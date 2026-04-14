@@ -3,14 +3,14 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import {
   serverConvex,
-  getTokenHashFromCookie,
+  getUserId,
 } from "#/lib/auth/session";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request): Promise<Response> {
-  const tokenHash = await getTokenHashFromCookie();
-  if (!tokenHash) {
+  const userId = await getUserId();
+  if (!userId) {
     return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as
@@ -20,17 +20,11 @@ export async function POST(req: Request): Promise<Response> {
     return NextResponse.json({ error: "missing_handoutId" }, { status: 400 });
   }
   try {
-    const convex = serverConvex();
-    const id = await convex.mutation(api.sessions.start, {
-      tokenHash,
+    const id = await serverConvex().mutation(api.sessions.start, {
+      userId,
       handoutId: body.handoutId as Id<"handouts">,
     });
-    // Read back the fresh session to forward the pairing code to the client.
-    const session = await convex.query(api.sessions.getForOwner, {
-      tokenHash,
-      presenterSessionId: id,
-    });
-    return NextResponse.json({ id, pairingCode: session?.pairingCode ?? null });
+    return NextResponse.json({ id });
   } catch {
     return NextResponse.json({ error: "server" }, { status: 500 });
   }

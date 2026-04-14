@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSession } from "#/lib/auth/session";
+import { signOut } from "#/auth";
 import { ForceDark } from "#/components/providers/force-dark";
 
 /**
  * Dashboard-Bereich ist immer dunkel — der Theme-Toggle gilt nur im Reader
- * für Endnutzer. Vermeidet inkonsistente Light-Mode-Cards im Editor.
+ * für Endnutzer. Logout läuft als Server-Action über Auth.js.
  */
 export default async function DashboardLayout({
   children,
@@ -14,6 +15,11 @@ export default async function DashboardLayout({
 }): Promise<React.ReactElement> {
   const session = await getSession();
   if (!session) redirect("/login");
+
+  async function logout(): Promise<void> {
+    "use server";
+    await signOut({ redirectTo: "/" });
+  }
 
   return (
     <div className="min-h-screen bg-navy-950 text-white">
@@ -47,7 +53,7 @@ export default async function DashboardLayout({
             <span className="hidden text-navy-400 sm:inline">
               {session.email}
             </span>
-            <form action="/api/auth/logout" method="POST">
+            <form action={logout}>
               <button
                 type="submit"
                 className="rounded-pill border border-white/10 px-3 py-1.5 text-xs font-medium text-navy-100 hover:border-salmon-400 hover:text-white"

@@ -3,14 +3,14 @@ import { api } from "@convex/_generated/api";
 import { HandoutCreate } from "#/lib/zod/handout";
 import {
   serverConvex,
-  getTokenHashFromCookie,
+  getUserId,
 } from "#/lib/auth/session";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request): Promise<Response> {
-  const tokenHash = await getTokenHashFromCookie();
-  if (!tokenHash) {
+  const userId = await getUserId();
+  if (!userId) {
     return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
   }
 
@@ -27,7 +27,7 @@ export async function POST(req: Request): Promise<Response> {
 
   try {
     const id = await serverConvex().mutation(api.handouts.create, {
-      tokenHash,
+      userId,
       title: parsed.data.title,
       description: parsed.data.description,
     });

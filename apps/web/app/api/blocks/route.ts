@@ -4,14 +4,14 @@ import type { Id } from "@convex/_generated/dataModel";
 import { BlockCreate } from "#/lib/zod/block";
 import {
   serverConvex,
-  getTokenHashFromCookie,
+  getUserId,
 } from "#/lib/auth/session";
 
 export const runtime = "nodejs";
 
 export async function GET(req: Request): Promise<Response> {
-  const tokenHash = await getTokenHashFromCookie();
-  if (!tokenHash) {
+  const userId = await getUserId();
+  if (!userId) {
     return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
   }
   const handoutId = new URL(req.url).searchParams.get("handoutId");
@@ -20,7 +20,7 @@ export async function GET(req: Request): Promise<Response> {
   }
   try {
     const blocks = await serverConvex().query(api.blocks.list, {
-      tokenHash,
+      userId,
       handoutId: handoutId as Id<"handouts">,
     });
     return NextResponse.json(blocks);
@@ -30,8 +30,8 @@ export async function GET(req: Request): Promise<Response> {
 }
 
 export async function POST(req: Request): Promise<Response> {
-  const tokenHash = await getTokenHashFromCookie();
-  if (!tokenHash) {
+  const userId = await getUserId();
+  if (!userId) {
     return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
   }
   let body: unknown;
@@ -53,7 +53,7 @@ export async function POST(req: Request): Promise<Response> {
   }
   try {
     const id = await serverConvex().mutation(api.blocks.create, {
-      tokenHash,
+      userId,
       handoutId,
       ...parsed.data,
     });

@@ -3,18 +3,18 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import {
   serverConvex,
-  getTokenHashFromCookie,
+  getUserId,
 } from "#/lib/auth/session";
 import { checkRateLimit } from "#/lib/auth/rate-limit";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request): Promise<Response> {
-  const tokenHash = await getTokenHashFromCookie();
-  if (!tokenHash) {
+  const userId = await getUserId();
+  if (!userId) {
     return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
   }
-  const rl = await checkRateLimit(`reveal:${tokenHash}`, 120);
+  const rl = await checkRateLimit(`reveal:${userId}`, 120);
   if (!rl.allowed) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }
@@ -27,7 +27,7 @@ export async function POST(req: Request): Promise<Response> {
   }
   try {
     await serverConvex().mutation(api.reveals.reveal, {
-      tokenHash,
+      userId,
       presenterSessionId: body.presenterSessionId as Id<"presenterSessions">,
       blockId: body.blockId as Id<"blocks">,
     });

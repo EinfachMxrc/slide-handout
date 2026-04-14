@@ -1,16 +1,12 @@
-import { cookies, headers } from "next/headers";
 import { ConvexHttpClient } from "convex/browser";
-import { api } from "@convex/_generated/api";
-import { sha256Hex } from "#/lib/auth/hash";
-
-export const SESSION_COOKIE = "sh_session";
-const SESSION_TTL_SECONDS = 14 * 24 * 60 * 60;
+import type { Id } from "@convex/_generated/dataModel";
+import { auth } from "#/auth";
 
 let _client: ConvexHttpClient | null = null;
 
 /**
- * Server-side Convex client. Reads a single env var.
- * Lazily initialized so build doesn't fail if the env is unset at import time.
+ * Server-side Convex client. Initialized lazily, wiederverwendet über Lebenszeit
+ * des Next-Prozesses.
  */
 export function serverConvex(): ConvexHttpClient {
   if (!_client) {
@@ -22,69 +18,35 @@ export function serverConvex(): ConvexHttpClient {
 }
 
 export interface SessionInfo {
-  sessionId: string;
-  userId: string;
+  userId: Id<"users">;
   email: string;
-  displayName: string;
+  displayName?: string;
   isDemo: boolean;
-  expiresAt: number;
 }
 
 /**
- * Reads the cookie, hashes it, asks Convex for the matching session.
- * Returns `null` if missing/invalid/expired.
- *
- * Use this in RSCs and Route Handlers — NOT in the proxy (no DB calls there).
+ * Liest die Auth.js-Session aus dem Cookie. `null` wenn nicht eingeloggt
+ * oder JWT ungültig / abgelaufen.
  */
 export async function getSession(): Promise<SessionInfo | null> {
-  const jar = await cookies();
-  const token = jar.get(SESSION_COOKIE)?.value;
-  if (!token) return null;
-  const tokenHash = await sha256Hex(token);
-  const session = await serverConvex().query(api.auth.sessionByHash, {
-    tokenHash,
-  });
-  return session as SessionInfo | null;
-}
-
-export async function getTokenHashFromCookie(): Promise<string | null> {
-  const jar = await cookies();
-  const token = jar.get(SESSION_COOKIE)?.value;
-  if (!token) return null;
-  return await sha256Hex(token);
+  const s = await auth();
+  const user = s?.user as
+    | { id?: string; email?: string; displayName?: string; isDemo?: boolean }
+    | undefined;
+  if (!user?.id) return null;
+  return {
+    userId: user.id as Id<"users">,
+    email: user.email ?? "",
+    displayName: user.displayName,
+    isDemo: Boolean(user.isDemo),
+  };
 }
 
 /**
- * Set the session cookie on a freshly-issued session token.
- * Must be called from a Server Action or Route Handler.
+ * Kurzform: nur die userId. Convenience für API-Routes, die nur den
+ * User-ID brauchen, um Convex aufzurufen.
  */
-export async function setSessionCookie(token: string): Promise<void> {
-  const jar = await cookies();
-  jar.set(SESSION_COOKIE, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: SESSION_TTL_SECONDS,
-  });
-}
-
-export async function clearSessionCookie(): Promise<void> {
-  const jar = await cookies();
-  jar.delete(SESSION_COOKIE);
-}
-
-/** Best-effort client IP from upstream proxy headers. */
-export async function getClientIp(): Promise<string> {
-  const h = await headers();
-  return (
-    h.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    h.get("x-real-ip") ??
-    "unknown"
-  );
-}
-
-export async function getUserAgent(): Promise<string | undefined> {
-  const h = await headers();
-  return h.get("user-agent") ?? undefined;
+export async function getUserId(): Promise<Id<"users"> | null> {
+  const s = await getSession();
+  return s?.userId ?? null;
 }

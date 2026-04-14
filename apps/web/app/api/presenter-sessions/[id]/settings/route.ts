@@ -3,7 +3,7 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import {
   serverConvex,
-  getTokenHashFromCookie,
+  getUserId,
 } from "#/lib/auth/session";
 
 export const runtime = "nodejs";
@@ -12,8 +12,8 @@ export async function PATCH(
   req: Request,
   ctx: { params: Promise<{ id: string }> },
 ): Promise<Response> {
-  const tokenHash = await getTokenHashFromCookie();
-  if (!tokenHash) {
+  const userId = await getUserId();
+  if (!userId) {
     return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
   }
   const { id } = await ctx.params;
@@ -25,7 +25,7 @@ export async function PATCH(
   }
   try {
     await serverConvex().mutation(api.sessions.updateSettings, {
-      tokenHash,
+      userId,
       presenterSessionId: id as Id<"presenterSessions">,
       syncMode: body.syncMode,
       currentSlide: body.currentSlide,

@@ -3,231 +3,378 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Slide Handout — PowerPoint Add-in</title>
+    <title>Slide Handout — PowerPoint Sync</title>
     <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
     <style>
       :root {
         color-scheme: light dark;
         --bg: #f5f7fb;
         --fg: #0a1426;
-        --fg-muted: #4b5668;
+        --fg-muted: #6b7687;
+        --fg-soft: #0a142690;
         --card: #ffffff;
-        --card-border: #d8dee8;
+        --card-strong: #ffffff;
+        --border: #d8dee8;
         --input-bg: #ffffff;
         --input-border: #c8d1de;
         --teal: #5fbfbf;
         --teal-strong: #0d9488;
+        --teal-ink: #06121a;
         --salmon: #d96555;
         --danger: #c03a2b;
+        --emerald: #10b981;
+        --navy-ink: #0a1426;
+        --shadow: 0 10px 30px -18px rgba(10, 20, 38, 0.25);
       }
       @media (prefers-color-scheme: dark) {
         :root {
           --bg: #0a0e1a;
           --fg: #f3f5f8;
-          --fg-muted: #9aa6b8;
+          --fg-muted: #8f99ac;
+          --fg-soft: #f3f5f8b3;
           --card: #131c30;
-          --card-border: #1e2a44;
+          --card-strong: #192340;
+          --border: #1e2a44;
           --input-bg: #0a0e1a;
           --input-border: #1e2a44;
           --teal: #5fbfbf;
           --teal-strong: #5fbfbf;
+          --teal-ink: #06121a;
           --salmon: #f07f6f;
           --danger: #f87171;
+          --emerald: #34d399;
+          --navy-ink: #f3f5f8;
+          --shadow: 0 16px 50px -20px rgba(0, 0, 0, 0.6);
         }
       }
-      * {
-        box-sizing: border-box;
-      }
-      html,
-      body {
+      * { box-sizing: border-box; }
+      html, body {
         margin: 0;
         padding: 0;
-        font-family:
-          -apple-system, "Segoe UI", system-ui, sans-serif;
-        font-size: 14px;
+        font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+        font-size: 13px;
         background: var(--bg);
         color: var(--fg);
+        -webkit-font-smoothing: antialiased;
       }
       main {
-        padding: 16px;
-        max-width: 380px;
+        padding: 20px 18px 24px;
+        max-width: 400px;
       }
-      header p.tag {
-        margin: 0 0 4px;
-        font-size: 11px;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--teal-strong);
-        font-weight: 600;
+      /* Brand strip */
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 18px;
       }
-      header h1 {
-        margin: 0 0 16px;
-        font-size: 18px;
-        font-weight: 600;
+      .brand-mark {
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        background: linear-gradient(135deg, var(--teal) 0%, var(--salmon) 100%);
+        box-shadow: var(--shadow);
+      }
+      .brand-title {
+        font-size: 14px;
+        font-weight: 700;
         letter-spacing: -0.01em;
-        color: var(--fg);
       }
+      .brand-sub {
+        font-size: 10px;
+        color: var(--fg-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+      /* Cards */
       .card {
         background: var(--card);
-        border: 1px solid var(--card-border);
-        border-radius: 12px;
-        padding: 16px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 16px 16px;
         margin-bottom: 12px;
       }
+      .card--accent {
+        border-color: color-mix(in srgb, var(--teal) 40%, transparent);
+        background: linear-gradient(180deg,
+          color-mix(in srgb, var(--teal) 8%, var(--card)),
+          var(--card));
+      }
+      h2 {
+        margin: 0 0 4px;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+      p.muted { margin: 0; font-size: 12px; color: var(--fg-muted); line-height: 1.5; }
       label {
         display: block;
-        font-size: 11px;
-        font-weight: 600;
-        letter-spacing: 0.06em;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
         color: var(--fg-muted);
-        margin-bottom: 6px;
+        margin-bottom: 5px;
       }
-      input[type="text"] {
+      input[type="email"], input[type="password"] {
         width: 100%;
-        padding: 12px 14px;
-        font-size: 20px;
-        letter-spacing: 0.3em;
-        font-family: ui-monospace, "SFMono-Regular", monospace;
-        text-align: center;
+        padding: 10px 12px;
+        font-size: 13px;
         border-radius: 10px;
         border: 1px solid var(--input-border);
         background: var(--input-bg);
         color: var(--fg);
+        outline: none;
       }
-      input[type="text"]:focus {
-        outline: 2px solid var(--teal);
-        outline-offset: 2px;
+      input[type="email"]:focus,
+      input[type="password"]:focus {
         border-color: var(--teal);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--teal) 25%, transparent);
       }
-      button {
-        display: block;
+      button, .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         width: 100%;
         padding: 11px 16px;
         border: 0;
         border-radius: 999px;
         background: var(--teal);
-        color: #06121a;
+        color: var(--teal-ink);
         font-size: 13px;
         font-weight: 700;
         cursor: pointer;
-        transition: filter 120ms ease, background 120ms ease;
+        transition: filter 120ms ease, transform 80ms ease;
       }
-      button:hover {
-        filter: brightness(1.05);
-      }
-      button:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-      }
-      .status {
-        font-size: 12px;
+      button:hover { filter: brightness(1.08); }
+      button:active { transform: translateY(1px); }
+      button:disabled { opacity: 0.55; cursor: not-allowed; }
+      .btn-ghost {
+        background: transparent;
         color: var(--fg-muted);
-        line-height: 1.5;
-        margin: 0;
+        border: 1px solid var(--border);
       }
-      .status.ok {
-        color: var(--teal-strong);
-      }
-      .status.err {
-        color: var(--danger);
-      }
-      .slide-readout {
-        display: flex;
-        align-items: baseline;
-        gap: 8px;
-        margin: 8px 0;
-      }
-      .slide-readout strong {
-        font-size: 32px;
-        font-weight: 700;
-        font-variant-numeric: tabular-nums;
+      .btn-ghost:hover {
+        background: color-mix(in srgb, var(--border) 60%, transparent);
         color: var(--fg);
       }
-      .ring {
+      .stack { display: grid; gap: 12px; }
+      .row { display: flex; align-items: center; gap: 10px; }
+      .row > * { flex-shrink: 0; }
+      .grow { flex: 1; min-width: 0; }
+      .sep { height: 1px; background: var(--border); margin: 8px 0 4px; }
+      /* Status chip */
+      .chip {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        font-size: 11px;
         padding: 4px 9px;
         border-radius: 999px;
-        background: rgba(95, 191, 191, 0.18);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        background: color-mix(in srgb, var(--teal) 18%, transparent);
         color: var(--teal-strong);
-        font-weight: 600;
       }
-      .ring::before {
+      .chip::before {
         content: "";
-        width: 6px;
-        height: 6px;
+        width: 6px; height: 6px;
         border-radius: 999px;
         background: var(--teal);
         animation: pulse 1.6s ease-in-out infinite;
       }
-      @keyframes pulse {
-        0%, 100% { opacity: 0.3; }
-        50% { opacity: 1; }
-      }
-      .muted-btn {
-        background: transparent;
+      .chip--ended {
+        background: color-mix(in srgb, var(--border) 70%, transparent);
         color: var(--fg-muted);
-        border: 1px solid var(--card-border);
       }
-      .muted-btn:hover {
-        background: var(--card-border);
+      .chip--ended::before { animation: none; opacity: 0.6; background: var(--fg-muted); }
+      @keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+      /* Session list */
+      ul.sessions {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 8px;
+      }
+      ul.sessions li { margin: 0; }
+      button.session-card {
+        width: 100%;
+        padding: 12px 14px;
+        text-align: left;
+        background: var(--card-strong);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        color: var(--fg);
+        cursor: pointer;
+        transition: border-color 120ms ease, transform 80ms ease;
+        font-weight: 400;
+      }
+      button.session-card:hover {
+        border-color: var(--teal);
+        transform: none;
+      }
+      .session-title {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: -0.005em;
+        color: var(--fg);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .session-meta {
+        margin-top: 4px;
+        font-size: 11px;
+        color: var(--fg-muted);
+      }
+      /* Live view */
+      .slide-big {
+        font-size: 56px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
         color: var(--fg);
       }
-      .footnote {
-        font-size: 12px;
+      .slide-label {
+        font-size: 11px;
         color: var(--fg-muted);
-        margin-top: 16px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-top: 4px;
+      }
+      .status-text { font-size: 12px; color: var(--fg-muted); }
+      .status-err { color: var(--danger); font-weight: 600; }
+      .status-ok { color: var(--emerald); font-weight: 600; }
+      .view-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 9px;
+        border-radius: 999px;
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-weight: 700;
+        background: var(--border);
+        color: var(--fg-muted);
+      }
+      .footnote {
+        font-size: 11px;
+        color: var(--fg-muted);
+        line-height: 1.5;
+        margin-top: 14px;
+        text-align: center;
+      }
+      .link-btn {
+        background: transparent;
+        color: var(--teal-strong);
+        border: none;
+        cursor: pointer;
+        padding: 6px 8px;
+        font-size: 12px;
+        font-weight: 600;
+        width: auto;
+      }
+      .link-btn:hover { text-decoration: underline; }
+      .skeleton {
+        height: 56px;
+        border-radius: 12px;
+        background: linear-gradient(
+          90deg,
+          var(--border),
+          var(--card-strong),
+          var(--border)
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.8s ease-in-out infinite;
+      }
+      @keyframes shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
       }
     </style>
   </head>
   <body>
     <main>
-      <header>
-        <p class="tag">Slide Handout</p>
-        <h1>PowerPoint Sync</h1>
+      <header class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <div>
+          <div class="brand-title">Slide Handout</div>
+          <div class="brand-sub">PowerPoint Sync</div>
+        </div>
       </header>
 
-      <!-- Screen 1: pairing -->
-      <section id="pairing" class="card">
-        <form id="pairing-form">
-          <label for="code">Pairing-Code aus dem Dashboard</label>
-          <input
-            id="code"
-            name="code"
-            type="text"
-            inputmode="numeric"
-            pattern="[0-9]{6}"
-            maxlength="6"
-            autocomplete="off"
-            placeholder="123456"
-            required
-          />
-          <button type="submit" id="pair-btn" style="margin-top:12px">
-            Verbinden
-          </button>
-          <p id="pair-status" class="status" style="margin-top:10px"></p>
+      <!-- === Screen 1: Login === -->
+      <section id="screen-login" class="card" hidden>
+        <h2>Anmelden</h2>
+        <p class="muted">Mit deinem Slide-Handout-Account — dann siehst du
+          hier deine aktiven Sessions.</p>
+        <form id="login-form" class="stack" style="margin-top:14px">
+          <div>
+            <label for="login-email">E-Mail</label>
+            <input id="login-email" name="email" type="email" autocomplete="email" required />
+          </div>
+          <div>
+            <label for="login-password">Passwort</label>
+            <input id="login-password" name="password" type="password" autocomplete="current-password" required />
+          </div>
+          <button type="submit" id="login-btn">Anmelden</button>
+          <p id="login-status" class="status-text" style="text-align:center"></p>
         </form>
       </section>
 
-      <!-- Screen 2: live -->
-      <section id="live" class="card" hidden>
-        <div class="ring">Live verbunden</div>
-        <div class="slide-readout">
-          <strong id="slide-no">–</strong>
-          <span class="status">aktuelle Folie</span>
+      <!-- === Screen 2: Session-Picker === -->
+      <section id="screen-picker" hidden>
+        <div class="card">
+          <div class="row" style="justify-content: space-between">
+            <div>
+              <h2>Sessions</h2>
+              <p class="muted" id="picker-user"></p>
+            </div>
+            <button type="button" class="link-btn" id="picker-logout">
+              Abmelden
+            </button>
+          </div>
+          <div class="sep"></div>
+          <div id="picker-list" class="stack" style="margin-top:10px">
+            <div class="skeleton"></div>
+            <div class="skeleton"></div>
+          </div>
+          <button type="button" class="btn-ghost" id="picker-refresh" style="margin-top:12px">
+            Neu laden
+          </button>
         </div>
-        <p class="status" id="live-status">Warte auf Folienwechsel in PowerPoint …</p>
-        <button type="button" id="disconnect" class="muted-btn" style="margin-top:10px">
-          Trennen
+      </section>
+
+      <!-- === Screen 3: Live === -->
+      <section id="screen-live" hidden>
+        <div class="card card--accent">
+          <div class="row" style="justify-content: space-between; align-items:flex-start">
+            <div>
+              <span class="chip" id="live-chip">Verbunden</span>
+              <div id="live-handout-title" class="session-title" style="margin-top:8px"></div>
+            </div>
+            <span class="view-badge" id="live-view-badge">Unbekannt</span>
+          </div>
+          <div style="margin-top:16px">
+            <div class="slide-big" id="slide-no">–</div>
+            <div class="slide-label">Aktuelle Folie</div>
+          </div>
+          <p id="live-status" class="status-text" style="margin-top:12px"></p>
+        </div>
+        <button type="button" class="btn-ghost" id="live-switch">
+          Andere Session wählen
+        </button>
+        <button type="button" class="link-btn" id="live-logout" style="margin-top:6px;margin-left:auto;margin-right:auto;display:block">
+          Abmelden
         </button>
       </section>
 
       <p class="footnote">
-        Dieser Add-in sendet nur die aktuelle Folien-Nummer an deine aktive
-        Slide-Handout-Sitzung. Keine Folieninhalte, keine Bilder.
+        Es werden nur Folien-Nummern übertragen — keine Inhalte,
+        keine Bilder, keine Notizen.
       </p>
     </main>
 

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { fetchQuery } from "convex/nextjs";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
-import { getTokenHashFromCookie } from "#/lib/auth/session";
+import { getUserId } from "#/lib/auth/session";
 import { BlockEditor } from "#/components/editor/block-editor";
 import { Card } from "#/components/ui/card";
 import { HandoutHeader } from "#/components/dashboard/handout-header";
@@ -15,14 +15,14 @@ export default async function HandoutEditorPage({
   params: Promise<{ id: string }>;
 }): Promise<React.ReactElement> {
   const { id } = await params;
-  const tokenHash = await getTokenHashFromCookie();
+  const userId = await getUserId();
   const handoutId = id as Id<"handouts">;
   const handout = await fetchQuery(api.handouts.get, {
-    tokenHash,
+    userId,
     id: handoutId,
   });
   if (!handout) notFound();
-  const blocks = await fetchQuery(api.blocks.list, { tokenHash, handoutId });
+  const blocks = await fetchQuery(api.blocks.list, { userId, handoutId });
 
   const publicUrl =
     (process.env.NEXT_PUBLIC_SITE_URL ?? "") + "/h/" + handout.publicToken;

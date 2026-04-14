@@ -2,17 +2,13 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 /**
- * Slide Handout — Convex Schema
+ * Slide Handout — Convex Schema.
  *
  * Realtime-Fan-out core: presenter reveals blocks → audience sees deltas.
  *
- * Key design decisions (see plan):
- *   - `reveals` is a separate delta-table, queried by `by_session_revealedAt`.
- *     Subscriptions only stream new reveals, never the full handout state.
- *   - Block ordering uses LexoRank-strings (`rank`) — no float rebalancing.
- *   - Idempotency for reveals enforced in mutation code via `by_session_block` index;
- *     Convex has no declarative unique constraints.
- *   - Auth records (sessions) store only SHA-256 hashes of cookie tokens.
+ * Seit der Auth.js-Migration ist Convex nicht mehr für Session-Management
+ * zuständig — Next.js hält die JWT-Session im Cookie, und jeder Convex-Call
+ * bekommt die verifizierte `userId` als typisiertes Arg.
  */
 export default defineSchema({
   users: defineTable({
@@ -23,13 +19,14 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_email", ["email"]),
 
-  // Auth sessions (cookie-based). Token plaintext is never stored.
-  sessions: defineTable({
+  // Langlebige API-Tokens für den PowerPoint-Add-in. Nicht zu verwechseln
+  // mit Next.js-Cookie-Sessions (die liegen als JWT im Browser).
+  addinTokens: defineTable({
     userId: v.id("users"),
-    tokenHash: v.string(), // SHA-256 hex of the random cookie token
+    tokenHash: v.string(), // SHA-256 hex des vom Client gehaltenen Secrets
+    label: v.optional(v.string()),
+    lastUsedAt: v.optional(v.number()),
     expiresAt: v.number(),
-    userAgent: v.optional(v.string()),
-    ip: v.optional(v.string()),
     createdAt: v.number(),
   })
     .index("by_tokenHash", ["tokenHash"])
@@ -44,16 +41,16 @@ export default defineSchema({
     presetPdfS3Key: v.optional(v.string()),
 
     // --- Reader customization (all optional) ---
-    accentColor: v.optional(v.string()), // hex "#rrggbb" — validated server-side
-    coverImageUrl: v.optional(v.string()), // https URL, shown above the title
-    logoUrl: v.optional(v.string()), // https URL, shown in header
+    accentColor: v.optional(v.string()),
+    coverImageUrl: v.optional(v.string()),
+    logoUrl: v.optional(v.string()),
     fontFamily: v.optional(
       v.union(v.literal("sans"), v.literal("serif"), v.literal("mono")),
     ),
     readerTheme: v.optional(
       v.union(v.literal("auto"), v.literal("light"), v.literal("dark")),
     ),
-    footerMarkdown: v.optional(v.string()), // shown at the bottom of the reader
+    footerMarkdown: v.optional(v.string()),
 
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -63,11 +60,11 @@ export default defineSchema({
 
   blocks: defineTable({
     handoutId: v.id("handouts"),
-    rank: v.string(), // LexoRank fraction, e.g. "n", "u", "n5"
+    rank: v.string(),
     title: v.string(),
     markdown: v.string(),
-    imageS3Key: v.optional(v.string()), // legacy — object-storage key
-    imageUrl: v.optional(v.string()), // new — pastable https URL, wins over key
+    imageS3Key: v.optional(v.string()),
+    imageUrl: v.optional(v.string()),
     imageCaption: v.optional(v.string()),
     trigger: v.union(
       v.literal("slide"),
@@ -82,8 +79,6 @@ export default defineSchema({
       v.literal("compact"),
       v.literal("terminal"),
     ),
-    // Optional: Variante eines Terminal-Blocks. Beeinflusst Header-Farbe
-    // und das Statusicon (✓ / ✗) — z.B. für „SICHER vs. UNSICHER"-Vergleiche.
     terminalVariant: v.optional(
       v.union(
         v.literal("neutral"),
@@ -112,20 +107,13 @@ export default defineSchema({
     .index("by_handout_rank", ["handoutId", "rank"])
     .index("by_handout_slide", ["handoutId", "slideNumber"]),
 
-  // Live presenter sessions — one per active presentation.
   presenterSessions: defineTable({
     handoutId: v.id("handouts"),
     ownerId: v.id("users"),
     status: v.union(v.literal("live"), v.literal("ended")),
     currentSlide: v.number(),
-    audienceCount: v.number(), // denormalized; updated by cron
-    // 6-digit code the PowerPoint Add-in types in to bind itself to this
-    // session without needing a cookie or OAuth.
+    audienceCount: v.number(),
     pairingCode: v.optional(v.string()),
-    // How slide → reveal mapping is driven:
-    //   "auto"   — only PowerPoint Add-in advances reveal blocks
-    //   "hybrid" — both add-in AND manual reveal-buttons work
-    //   "manual" — presenter clicks Reveal for each block (default)
     syncMode: v.optional(
       v.union(v.literal("auto"), v.literal("hybrid"), v.literal("manual")),
     ),
@@ -137,7 +125,6 @@ export default defineSchema({
     .index("by_owner_status", ["ownerId", "status"])
     .index("by_pairingCode", ["pairingCode"]),
 
-  // Delta-table: one row per reveal event. Subscriptions read this incrementally.
   reveals: defineTable({
     presenterSessionId: v.id("presenterSessions"),
     blockId: v.id("blocks"),
@@ -146,17 +133,14 @@ export default defineSchema({
     .index("by_session_revealedAt", ["presenterSessionId", "revealedAt"])
     .index("by_session_block", ["presenterSessionId", "blockId"]),
 
-  // Live audience presence — one row per browser tab, upserted via heartbeat
-  // every ~20s. Count of rows with lastSeenAt > now - 45s = live audience.
   audienceHeartbeats: defineTable({
     presenterSessionId: v.id("presenterSessions"),
-    clientId: v.string(), // random ID kept in the reader's localStorage
+    clientId: v.string(),
     lastSeenAt: v.number(),
   })
     .index("by_session_lastSeenAt", ["presenterSessionId", "lastSeenAt"])
     .index("by_session_client", ["presenterSessionId", "clientId"]),
 
-  // Sliding-window rate limiter, keyed by "endpoint:identifier".
   rateLimits: defineTable({
     key: v.string(),
     windowStart: v.number(),

@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { fetchQuery } from "convex/nextjs";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
-import { getTokenHashFromCookie } from "#/lib/auth/session";
+import { getUserId } from "#/lib/auth/session";
 import { SessionShell } from "#/components/session/session-shell";
 
 export default async function SessionPage({
@@ -12,15 +12,15 @@ export default async function SessionPage({
 }): Promise<React.ReactElement> {
   const { id } = await params;
   const handoutId = id as Id<"handouts">;
-  const tokenHash = await getTokenHashFromCookie();
+  const userId = await getUserId();
 
   const handout = await fetchQuery(api.handouts.get, {
-    tokenHash,
+    userId,
     id: handoutId,
   });
   if (!handout) notFound();
 
-  const blocks = await fetchQuery(api.blocks.list, { tokenHash, handoutId });
+  const blocks = await fetchQuery(api.blocks.list, { userId, handoutId });
 
   const publicUrl =
     (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000") +

@@ -1,76 +1,80 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
-const SESSION_TTL_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
-
 /**
- * AUTH session storage.
+ * Auth-Funktionen für den PowerPoint-Add-in (einziger Rest der Convex-
+ * seitigen Auth nach der Migration auf Auth.js für das Web-Frontend).
  *
- * The cookie token is generated and SHA-256-hashed in the Next.js API route.
- * Convex only ever sees the hash. Lookup by hash → user.
+ * Flow:
+ *   1. User tippt Email+Passwort direkt im Taskpane ein
+ *   2. Next.js verifiziert das Passwort (Argon2) und ruft `issueAddinToken`
+ *      auf — wir speichern den SHA-256-Hash des Tokens
+ *   3. Der Add-in erhält den Roh-Token einmalig, speichert ihn in
+ *      localStorage und sendet ihn als Bearer-Header bei jedem Call
+ *   4. Alle weiteren Add-in-Calls gehen über `verifyAddinToken` → userId
  */
 
-export const sessionByHash = query({
-  args: { tokenHash: v.string() },
-  handler: async (ctx, { tokenHash }) => {
-    const session = await ctx.db
-      .query("sessions")
-      .withIndex("by_tokenHash", (q) => q.eq("tokenHash", tokenHash))
-      .unique();
-    if (!session) return null;
-    if (session.expiresAt < Date.now()) return null;
-    const user = await ctx.db.get(session.userId);
-    if (!user) return null;
-    return {
-      sessionId: session._id,
-      userId: user._id,
-      email: user.email,
-      displayName: user.displayName,
-      isDemo: user.isDemo,
-      expiresAt: session.expiresAt,
-    };
-  },
-});
+const ADDIN_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 Tage
 
-export const createSession = mutation({
+export const issueAddinToken = mutation({
   args: {
     userId: v.id("users"),
     tokenHash: v.string(),
-    userAgent: v.optional(v.string()),
-    ip: v.optional(v.string()),
+    label: v.optional(v.string()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, { userId, tokenHash, label }) => {
     const now = Date.now();
-    return await ctx.db.insert("sessions", {
-      userId: args.userId,
-      tokenHash: args.tokenHash,
-      expiresAt: now + SESSION_TTL_MS,
-      userAgent: args.userAgent,
-      ip: args.ip,
+    return await ctx.db.insert("addinTokens", {
+      userId,
+      tokenHash,
+      label,
+      expiresAt: now + ADDIN_TOKEN_TTL_MS,
       createdAt: now,
+      lastUsedAt: now,
     });
   },
 });
 
-/** Invalidate by hash. Idempotent — does nothing if session unknown. */
-export const revokeSession = mutation({
+export const verifyAddinToken = query({
   args: { tokenHash: v.string() },
   handler: async (ctx, { tokenHash }) => {
-    const session = await ctx.db
-      .query("sessions")
+    const record = await ctx.db
+      .query("addinTokens")
       .withIndex("by_tokenHash", (q) => q.eq("tokenHash", tokenHash))
       .unique();
-    if (session) await ctx.db.delete(session._id);
+    if (!record) return null;
+    if (record.expiresAt < Date.now()) return null;
+    const user = await ctx.db.get(record.userId);
+    if (!user) return null;
+    return {
+      userId: user._id,
+      email: user.email,
+      displayName: user.displayName,
+      isDemo: user.isDemo,
+    };
   },
 });
 
-export const revokeAllForUser = mutation({
-  args: { userId: v.id("users") },
-  handler: async (ctx, { userId }) => {
-    const sessions = await ctx.db
-      .query("sessions")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .collect();
-    await Promise.all(sessions.map((s) => ctx.db.delete(s._id)));
+export const touchAddinToken = mutation({
+  args: { tokenHash: v.string() },
+  handler: async (ctx, { tokenHash }) => {
+    const record = await ctx.db
+      .query("addinTokens")
+      .withIndex("by_tokenHash", (q) => q.eq("tokenHash", tokenHash))
+      .unique();
+    if (record) {
+      await ctx.db.patch(record._id, { lastUsedAt: Date.now() });
+    }
+  },
+});
+
+export const revokeAddinToken = mutation({
+  args: { tokenHash: v.string() },
+  handler: async (ctx, { tokenHash }) => {
+    const record = await ctx.db
+      .query("addinTokens")
+      .withIndex("by_tokenHash", (q) => q.eq("tokenHash", tokenHash))
+      .unique();
+    if (record) await ctx.db.delete(record._id);
   },
 });

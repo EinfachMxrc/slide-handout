@@ -4,7 +4,7 @@ import type { Id } from "@convex/_generated/dataModel";
 import { BlockUpdate } from "#/lib/zod/block";
 import {
   serverConvex,
-  getTokenHashFromCookie,
+  getUserId,
 } from "#/lib/auth/session";
 
 export const runtime = "nodejs";
@@ -13,8 +13,8 @@ export async function PATCH(
   req: Request,
   ctx: { params: Promise<{ id: string }> },
 ): Promise<Response> {
-  const tokenHash = await getTokenHashFromCookie();
-  if (!tokenHash) {
+  const userId = await getUserId();
+  if (!userId) {
     return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
   }
   const { id } = await ctx.params;
@@ -30,7 +30,7 @@ export async function PATCH(
   }
   try {
     await serverConvex().mutation(api.blocks.update, {
-      tokenHash,
+      userId,
       id: id as Id<"blocks">,
       ...parsed.data,
     });
@@ -44,14 +44,14 @@ export async function DELETE(
   _req: Request,
   ctx: { params: Promise<{ id: string }> },
 ): Promise<Response> {
-  const tokenHash = await getTokenHashFromCookie();
-  if (!tokenHash) {
+  const userId = await getUserId();
+  if (!userId) {
     return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
   }
   const { id } = await ctx.params;
   try {
     await serverConvex().mutation(api.blocks.remove, {
-      tokenHash,
+      userId,
       id: id as Id<"blocks">,
     });
     return NextResponse.json({ ok: true });

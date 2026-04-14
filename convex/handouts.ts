@@ -20,9 +20,9 @@ function randomToken(): string {
 }
 
 export const dashboardStats = query({
-  args: { tokenHash: v.union(v.string(), v.null()) },
-  handler: async (ctx, { tokenHash }) => {
-    const user = await requireUser(ctx, tokenHash);
+  args: { userId: v.union(v.id("users"), v.null()) },
+  handler: async (ctx, { userId }) => {
+    const user = await requireUser(ctx, userId);
     const handouts = await ctx.db
       .query("handouts")
       .withIndex("by_owner", (q) => q.eq("ownerId", user._id))
@@ -52,9 +52,9 @@ export const dashboardStats = query({
 });
 
 export const listMine = query({
-  args: { tokenHash: v.union(v.string(), v.null()) },
-  handler: async (ctx, { tokenHash }) => {
-    const user = await requireUser(ctx, tokenHash);
+  args: { userId: v.union(v.id("users"), v.null()) },
+  handler: async (ctx, { userId }) => {
+    const user = await requireUser(ctx, userId);
     return await ctx.db
       .query("handouts")
       .withIndex("by_owner", (q) => q.eq("ownerId", user._id))
@@ -64,9 +64,9 @@ export const listMine = query({
 });
 
 export const get = query({
-  args: { tokenHash: v.union(v.string(), v.null()), id: v.id("handouts") },
-  handler: async (ctx, { tokenHash, id }) => {
-    const user = await requireUser(ctx, tokenHash);
+  args: { userId: v.union(v.id("users"), v.null()), id: v.id("handouts") },
+  handler: async (ctx, { userId, id }) => {
+    const user = await requireUser(ctx, userId);
     const handout = await ctx.db.get(id);
     if (!handout || handout.ownerId !== user._id) return null;
     return handout;
@@ -108,12 +108,12 @@ export const getPublic = query({
 
 export const create = mutation({
   args: {
-    tokenHash: v.union(v.string(), v.null()),
+    userId: v.union(v.id("users"), v.null()),
     title: v.string(),
     description: v.string(),
   },
-  handler: async (ctx, { tokenHash, title, description }) => {
-    const user = await requireUser(ctx, tokenHash);
+  handler: async (ctx, { userId, title, description }) => {
+    const user = await requireUser(ctx, userId);
     assertNotDemo(user);
     const now = Date.now();
     return await ctx.db.insert("handouts", {
@@ -150,7 +150,7 @@ function validateHttpsUrl(url: string): string {
 
 export const update = mutation({
   args: {
-    tokenHash: v.union(v.string(), v.null()),
+    userId: v.union(v.id("users"), v.null()),
     id: v.id("handouts"),
     title: v.optional(v.string()),
     description: v.optional(v.string()),
@@ -167,8 +167,8 @@ export const update = mutation({
     ),
     footerMarkdown: v.optional(v.string()),
   },
-  handler: async (ctx, { tokenHash, id, ...patch }) => {
-    const user = await requireUser(ctx, tokenHash);
+  handler: async (ctx, { userId, id, ...patch }) => {
+    const user = await requireUser(ctx, userId);
     assertNotDemo(user);
     await assertHandoutOwner(ctx, user, id);
 
@@ -193,9 +193,9 @@ export const update = mutation({
 });
 
 export const remove = mutation({
-  args: { tokenHash: v.union(v.string(), v.null()), id: v.id("handouts") },
-  handler: async (ctx, { tokenHash, id }) => {
-    const user = await requireUser(ctx, tokenHash);
+  args: { userId: v.union(v.id("users"), v.null()), id: v.id("handouts") },
+  handler: async (ctx, { userId, id }) => {
+    const user = await requireUser(ctx, userId);
     assertNotDemo(user);
     await assertHandoutOwner(ctx, user, id);
     // Cascade — delete blocks, presenter sessions, and reveals belonging to this handout.

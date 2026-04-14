@@ -2,19 +2,19 @@ import { NextResponse } from "next/server";
 import { api } from "@convex/_generated/api";
 import {
   serverConvex,
-  getTokenHashFromCookie,
+  getUserId,
 } from "#/lib/auth/session";
 
 export const runtime = "nodejs";
 
 export async function GET(): Promise<Response> {
-  const tokenHash = await getTokenHashFromCookie();
-  if (!tokenHash) {
+  const userId = await getUserId();
+  if (!userId) {
     return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
   }
   try {
     const handouts = await serverConvex().query(api.handouts.listMine, {
-      tokenHash,
+      userId,
     });
     return NextResponse.json(handouts);
   } catch {

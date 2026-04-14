@@ -3,7 +3,7 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import {
   serverConvex,
-  getTokenHashFromCookie,
+  getUserId,
 } from "#/lib/auth/session";
 
 export const runtime = "nodejs";
@@ -15,8 +15,8 @@ interface Body {
 }
 
 export async function POST(req: Request): Promise<Response> {
-  const tokenHash = await getTokenHashFromCookie();
-  if (!tokenHash) {
+  const userId = await getUserId();
+  if (!userId) {
     return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
   }
   const body = (await req.json().catch(() => null)) as Body | null;
@@ -25,7 +25,7 @@ export async function POST(req: Request): Promise<Response> {
   }
   try {
     await serverConvex().mutation(api.blocks.reorder, {
-      tokenHash,
+      userId,
       id: body.id as Id<"blocks">,
       prevRank: body.prevRank,
       nextRank: body.nextRank,

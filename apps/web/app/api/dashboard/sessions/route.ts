@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { api } from "@convex/_generated/api";
 import {
   serverConvex,
-  getTokenHashFromCookie,
+  getUserId,
 } from "#/lib/auth/session";
 
 export const runtime = "nodejs";
@@ -22,15 +22,15 @@ interface Handout {
 }
 
 export async function GET(): Promise<Response> {
-  const tokenHash = await getTokenHashFromCookie();
-  if (!tokenHash) {
+  const userId = await getUserId();
+  if (!userId) {
     return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
   }
   try {
     const convex = serverConvex();
     const [sessions, handouts] = (await Promise.all([
-      convex.query(api.sessions.listMine, { tokenHash }),
-      convex.query(api.handouts.listMine, { tokenHash }),
+      convex.query(api.sessions.listMine, { userId }),
+      convex.query(api.handouts.listMine, { userId }),
     ])) as [PresenterSession[], Handout[]];
     const titles = new Map(handouts.map((h) => [h._id, h.title]));
     return NextResponse.json(

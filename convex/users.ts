@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query, internalMutation } from "./_generated/server";
-import { getUserByTokenHash } from "./_lib/authHelpers";
+import { getUserOpt } from "./_lib/authHelpers";
 
 /**
  * USER lifecycle.
@@ -12,9 +12,9 @@ import { getUserByTokenHash } from "./_lib/authHelpers";
  */
 
 export const me = query({
-  args: { tokenHash: v.union(v.string(), v.null()) },
-  handler: async (ctx, { tokenHash }) => {
-    const user = await getUserByTokenHash(ctx, tokenHash);
+  args: { userId: v.union(v.id("users"), v.null()) },
+  handler: async (ctx, { userId }) => {
+    const user = await getUserOpt(ctx, userId);
     if (!user) return null;
     return {
       _id: user._id,

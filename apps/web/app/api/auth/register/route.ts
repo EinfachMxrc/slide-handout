@@ -1,24 +1,20 @@
 import { NextResponse } from "next/server";
 import { api } from "@convex/_generated/api";
 import { RegisterPayload } from "#/lib/zod/auth";
-import {
-  hashPassword,
-  generateSessionToken,
-  sha256Hex,
-} from "#/lib/auth/hash";
-import {
-  serverConvex,
-  setSessionCookie,
-  getClientIp,
-  getUserAgent,
-} from "#/lib/auth/session";
+import { hashPassword } from "#/lib/auth/hash";
+import { serverConvex } from "#/lib/auth/session";
+import { signIn } from "#/auth";
 import { checkRateLimit } from "#/lib/auth/rate-limit";
 
 export const runtime = "nodejs";
 
+/**
+ * Registrierung. Auth.js deckt das von Haus aus nicht mit Credentials ab —
+ * wir legen den User in Convex an, hashen das Passwort und loggen den User
+ * direkt über `signIn("credentials")` ein (setzt das Auth.js-Cookie).
+ */
 export async function POST(req: Request): Promise<Response> {
-  const ip = await getClientIp();
-  const rl = await checkRateLimit(`register:${ip}`, 10);
+  const rl = await checkRateLimit(`register:${req.headers.get("x-forwarded-for") ?? "unknown"}`, 10);
   if (!rl.allowed) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }
@@ -38,11 +34,9 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   const passwordHash = await hashPassword(parsed.data.password);
-  const convex = serverConvex();
 
-  let userId: string;
   try {
-    userId = await convex.mutation(api.users.createUser, {
+    await serverConvex().mutation(api.users.createUser, {
       email: parsed.data.email,
       passwordHash,
       displayName: parsed.data.displayName,
@@ -55,15 +49,18 @@ export async function POST(req: Request): Promise<Response> {
     return NextResponse.json({ error: "create_failed" }, { status: 500 });
   }
 
-  const token = generateSessionToken();
-  const tokenHash = await sha256Hex(token);
-  await convex.mutation(api.auth.createSession, {
-    userId: userId as never,
-    tokenHash,
-    userAgent: await getUserAgent(),
-    ip,
-  });
-  await setSessionCookie(token);
+  // Sign the user in via Auth.js Credentials provider. `redirect: false`
+  // stops Auth.js from throwing the signal it otherwise uses to navigate.
+  try {
+    await signIn("credentials", {
+      email: parsed.data.email,
+      password: parsed.data.password,
+      redirect: false,
+    });
+  } catch {
+    // If auto-login fails, the account still exists — client can retry /login.
+    return NextResponse.json({ ok: true, autoLogin: false });
+  }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, autoLogin: true });
 }
