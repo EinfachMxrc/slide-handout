@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { BrowserMockup } from "./mockup";
+import { DemoButton } from "./demo-button";
 
-export function Hero(): React.ReactElement {
+export function Hero({
+  loggedIn,
+}: {
+  loggedIn: boolean;
+}): React.ReactElement {
   return (
     <section className="relative overflow-hidden">
       <div
@@ -11,7 +16,6 @@ export function Hero(): React.ReactElement {
             "radial-gradient(circle at 30% 0%, rgba(95,191,191,0.16), transparent 55%), radial-gradient(circle at 75% 10%, rgba(240,127,111,0.12), transparent 55%)",
         }}
       />
-      {/* dünner Teal→Salmon-Strich oben */}
       <div className="absolute inset-x-0 top-0 -z-10 h-px bg-gradient-to-r from-teal-400 via-teal-300 to-salmon-400" />
       <div className="mx-auto max-w-5xl px-6 pt-16 text-center sm:pt-24">
         <span className="inline-flex rounded-pill bg-teal-400/15 px-3 py-1 text-xs font-medium text-teal-300">
@@ -32,21 +36,40 @@ export function Hero(): React.ReactElement {
           reicht ein Link im Browser.
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <Link
-            href="/register"
-            className="rounded-pill bg-teal-400 px-6 py-3 text-sm font-semibold text-navy-1000 shadow-sm shadow-teal-400/30 hover:bg-teal-300"
-          >
-            Jetzt ausprobieren
-          </Link>
-          <Link
-            href="#demo"
-            className="rounded-pill border border-white/15 px-6 py-3 text-sm font-medium text-white hover:border-white/40 hover:bg-white/5"
-          >
-            Demo ansehen
-          </Link>
+          {loggedIn ? (
+            <>
+              <Link
+                href="/dashboard"
+                className="rounded-pill bg-teal-400 px-6 py-3 text-sm font-semibold text-navy-1000 shadow-sm shadow-teal-400/30 hover:bg-teal-300"
+              >
+                Zum Dashboard
+              </Link>
+              <Link
+                href="/handouts/new"
+                className="rounded-pill border border-white/15 px-6 py-3 text-sm font-medium text-white hover:border-white/40 hover:bg-white/5"
+              >
+                Neues Handout anlegen
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/register"
+                className="rounded-pill bg-teal-400 px-6 py-3 text-sm font-semibold text-navy-1000 shadow-sm shadow-teal-400/30 hover:bg-teal-300"
+              >
+                Kostenlos starten
+              </Link>
+              <DemoButton
+                className="rounded-pill border border-white/15 px-6 py-3 text-sm font-medium text-white hover:border-white/40 hover:bg-white/5"
+                label="Demo ansehen"
+              />
+            </>
+          )}
         </div>
         <p className="mt-4 text-xs text-navy-400">
-          Keine Kreditkarte · Demo-Account sofort verfügbar
+          {loggedIn
+            ? "Du bist angemeldet — direkt ins Dashboard."
+            : "Keine Kreditkarte · Demo-Account sofort verfügbar"}
         </p>
       </div>
 

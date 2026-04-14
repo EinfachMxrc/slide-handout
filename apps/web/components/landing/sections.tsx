@@ -165,33 +165,55 @@ export function Audiences(): React.ReactElement {
   );
 }
 
-export function FinalCta(): React.ReactElement {
+import { DemoButton } from "./demo-button";
+
+export function FinalCta({
+  loggedIn,
+}: {
+  loggedIn: boolean;
+}): React.ReactElement {
   return (
     <section className="mx-auto max-w-6xl px-6 pb-24">
       <div className="rounded-[20px] border border-white/10 bg-gradient-to-br from-teal-400/15 via-navy-900 to-navy-900 px-8 py-16 text-center">
         <h2 className="mx-auto max-w-xl text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-          Bereit für bessere Handouts?
+          {loggedIn
+            ? "Dein Dashboard wartet."
+            : "Bereit für bessere Handouts?"}
         </h2>
         <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-navy-100">
-          Erstellen Sie Ihren kostenlosen Account oder testen Sie alles sofort
-          mit dem Demo-Zugang.
+          {loggedIn
+            ? "Starte eine neue Session oder bearbeite ein bestehendes Handout."
+            : "Erstelle deinen kostenlosen Account oder klicke dich in einer Minute durch den Demo-Zugang."}
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <Link
-            href="/register"
-            className="rounded-pill bg-teal-400 px-5 py-3 text-sm font-semibold text-navy-1000 shadow-sm shadow-teal-400/30 hover:bg-teal-300"
-          >
-            Kostenlos starten
-          </Link>
-          <div className="inline-flex items-center gap-3 rounded-pill border border-white/10 px-4 py-3 text-xs text-navy-100">
-            <span className="font-medium uppercase tracking-wide text-navy-400">
-              Demo:
-            </span>
-            <code className="font-mono">demo@example.com</code>
-            <span className="text-navy-400">/</span>
-            <code className="font-mono">demo1234</code>
-          </div>
+          {loggedIn ? (
+            <Link
+              href="/dashboard"
+              className="rounded-pill bg-teal-400 px-5 py-3 text-sm font-semibold text-navy-1000 shadow-sm shadow-teal-400/30 hover:bg-teal-300"
+            >
+              Zum Dashboard
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/register"
+                className="rounded-pill bg-teal-400 px-5 py-3 text-sm font-semibold text-navy-1000 shadow-sm shadow-teal-400/30 hover:bg-teal-300"
+              >
+                Kostenlos starten
+              </Link>
+              <DemoButton
+                className="rounded-pill border border-white/15 px-5 py-3 text-sm font-medium text-white hover:border-white/40 hover:bg-white/5"
+                label="Als Demo einloggen"
+              />
+            </>
+          )}
         </div>
+        {!loggedIn && (
+          <p className="mx-auto mt-4 max-w-md text-xs text-navy-400">
+            Der Demo-Zugang ist abgesichert read-only — du kannst alles
+            ansehen und Sessions starten, aber keine echten Daten verändern.
+          </p>
+        )}
       </div>
     </section>
   );

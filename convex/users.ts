@@ -40,8 +40,9 @@ export const createUser = mutation({
     email: v.string(),
     passwordHash: v.string(),
     displayName: v.string(),
+    isDemo: v.optional(v.boolean()),
   },
-  handler: async (ctx, { email, passwordHash, displayName }) => {
+  handler: async (ctx, { email, passwordHash, displayName, isDemo }) => {
     const normalized = email.toLowerCase();
     const existing = await ctx.db
       .query("users")
@@ -53,7 +54,7 @@ export const createUser = mutation({
       email: normalized,
       passwordHash,
       displayName,
-      isDemo: false,
+      isDemo: isDemo === true,
       createdAt: Date.now(),
     });
   },
