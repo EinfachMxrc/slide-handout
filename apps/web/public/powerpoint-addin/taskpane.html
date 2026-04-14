@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Slide Handout — PowerPoint Add-in</title>
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f5f7fb;
+        --fg: #0a1426;
+        --fg-muted: #4b5668;
+        --card: #ffffff;
+        --card-border: #d8dee8;
+        --input-bg: #ffffff;
+        --input-border: #c8d1de;
+        --teal: #5fbfbf;
+        --teal-strong: #0d9488;
+        --salmon: #d96555;
+        --danger: #c03a2b;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0a0e1a;
+          --fg: #f3f5f8;
+          --fg-muted: #9aa6b8;
+          --card: #131c30;
+          --card-border: #1e2a44;
+          --input-bg: #0a0e1a;
+          --input-border: #1e2a44;
+          --teal: #5fbfbf;
+          --teal-strong: #5fbfbf;
+          --salmon: #f07f6f;
+          --danger: #f87171;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        font-family:
+          -apple-system, "Segoe UI", system-ui, sans-serif;
+        font-size: 14px;
+        background: var(--bg);
+        color: var(--fg);
+      }
+      main {
+        padding: 16px;
+        max-width: 380px;
+      }
+      header p.tag {
+        margin: 0 0 4px;
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--teal-strong);
+        font-weight: 600;
+      }
+      header h1 {
+        margin: 0 0 16px;
+        font-size: 18px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: var(--fg);
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--card-border);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+      }
+      label {
+        display: block;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--fg-muted);
+        margin-bottom: 6px;
+      }
+      input[type="text"] {
+        width: 100%;
+        padding: 12px 14px;
+        font-size: 20px;
+        letter-spacing: 0.3em;
+        font-family: ui-monospace, "SFMono-Regular", monospace;
+        text-align: center;
+        border-radius: 10px;
+        border: 1px solid var(--input-border);
+        background: var(--input-bg);
+        color: var(--fg);
+      }
+      input[type="text"]:focus {
+        outline: 2px solid var(--teal);
+        outline-offset: 2px;
+        border-color: var(--teal);
+      }
+      button {
+        display: block;
+        width: 100%;
+        padding: 11px 16px;
+        border: 0;
+        border-radius: 999px;
+        background: var(--teal);
+        color: #06121a;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: filter 120ms ease, background 120ms ease;
+      }
+      button:hover {
+        filter: brightness(1.05);
+      }
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      .status {
+        font-size: 12px;
+        color: var(--fg-muted);
+        line-height: 1.5;
+        margin: 0;
+      }
+      .status.ok {
+        color: var(--teal-strong);
+      }
+      .status.err {
+        color: var(--danger);
+      }
+      .slide-readout {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin: 8px 0;
+      }
+      .slide-readout strong {
+        font-size: 32px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        color: var(--fg);
+      }
+      .ring {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        padding: 4px 9px;
+        border-radius: 999px;
+        background: rgba(95, 191, 191, 0.18);
+        color: var(--teal-strong);
+        font-weight: 600;
+      }
+      .ring::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 999px;
+        background: var(--teal);
+        animation: pulse 1.6s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 0.3; }
+        50% { opacity: 1; }
+      }
+      .muted-btn {
+        background: transparent;
+        color: var(--fg-muted);
+        border: 1px solid var(--card-border);
+      }
+      .muted-btn:hover {
+        background: var(--card-border);
+        color: var(--fg);
+      }
+      .footnote {
+        font-size: 12px;
+        color: var(--fg-muted);
+        margin-top: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="tag">Slide Handout</p>
+        <h1>PowerPoint Sync</h1>
+      </header>
+
+      <!-- Screen 1: pairing -->
+      <section id="pairing" class="card">
+        <form id="pairing-form">
+          <label for="code">Pairing-Code aus dem Dashboard</label>
+          <input
+            id="code"
+            name="code"
+            type="text"
+            inputmode="numeric"
+            pattern="[0-9]{6}"
+            maxlength="6"
+            autocomplete="off"
+            placeholder="123456"
+            required
+          />
+          <button type="submit" id="pair-btn" style="margin-top:12px">
+            Verbinden
+          </button>
+          <p id="pair-status" class="status" style="margin-top:10px"></p>
+        </form>
+      </section>
+
+      <!-- Screen 2: live -->
+      <section id="live" class="card" hidden>
+        <div class="ring">Live verbunden</div>
+        <div class="slide-readout">
+          <strong id="slide-no">–</strong>
+          <span class="status">aktuelle Folie</span>
+        </div>
+        <p class="status" id="live-status">Warte auf Folienwechsel in PowerPoint …</p>
+        <button type="button" id="disconnect" class="muted-btn" style="margin-top:10px">
+          Trennen
+        </button>
+      </section>
+
+      <p class="footnote">
+        Dieser Add-in sendet nur die aktuelle Folien-Nummer an deine aktive
+        Slide-Handout-Sitzung. Keine Folieninhalte, keine Bilder.
+      </p>
+    </main>
+
+    <script src="taskpane.js" defer></script>
+  </body>
+</html>

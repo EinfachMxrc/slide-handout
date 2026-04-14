@@ -1,0 +1,27 @@
+services:
+  web:
+    container_name: handout-web
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        CONVEX_DEPLOY_KEY: ${CONVEX_DEPLOY_KEY}
+        NEXT_PUBLIC_CONVEX_URL: ${NEXT_PUBLIC_CONVEX_URL}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
+        NEXT_PUBLIC_S3_PUBLIC_BASE_URL: ${NEXT_PUBLIC_S3_PUBLIC_BASE_URL:-}
+    restart: unless-stopped
+    env_file: .env
+    expose:
+      - "3000"
+    networks:
+      - leasingradar_default
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+networks:
+  leasingradar_default:
+    external: true

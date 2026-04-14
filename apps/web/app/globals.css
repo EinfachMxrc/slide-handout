@@ -1,0 +1,139 @@
+@import "tailwindcss";
+
+/**
+ * Tailwind v4.2 — alle Konfiguration via @theme. Keine tailwind.config.js.
+ * Dark-Mode via class strategy, dafür eine custom @variant.
+ */
+@theme {
+  --color-navy-50: oklch(0.97 0.01 260);
+  --color-navy-100: oklch(0.92 0.02 260);
+  --color-navy-400: oklch(0.58 0.04 260);
+  --color-navy-700: oklch(0.30 0.03 260);
+  --color-navy-800: oklch(0.22 0.03 258);
+  --color-navy-850: oklch(0.17 0.03 258);
+  --color-navy-900: oklch(0.14 0.03 258);
+  --color-navy-950: oklch(0.10 0.03 258);
+  --color-navy-1000: oklch(0.07 0.03 258);
+
+  /* Primary — Teal (aus dem Slide-Handout-Design) */
+  --color-teal-200: oklch(0.88 0.07 188);
+  --color-teal-300: oklch(0.83 0.10 185);
+  --color-teal-400: oklch(0.75 0.13 185);
+  --color-teal-500: oklch(0.66 0.14 185);
+  --color-teal-600: oklch(0.55 0.13 185);
+
+  /* Akzent — Coral/Salmon (destruktiv + Kontrast) */
+  --color-salmon-300: oklch(0.81 0.12 25);
+  --color-salmon-400: oklch(0.73 0.15 25);
+  --color-salmon-500: oklch(0.66 0.17 25);
+
+  /* Behalten: indigo nur noch als optionaler "info"-Akzent */
+  --color-indigo-300: oklch(0.82 0.10 285);
+  --color-indigo-400: oklch(0.74 0.14 285);
+  --color-indigo-500: oklch(0.67 0.18 285);
+
+  --color-emerald-400: oklch(0.75 0.15 155);
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --radius-card: 0.875rem;
+  --radius-pill: 9999px;
+}
+
+@variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  html {
+    color-scheme: light dark;
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  html,
+  body {
+    @apply min-h-screen bg-white text-navy-900 antialiased;
+    font-family: var(--font-sans);
+  }
+  html.dark,
+  html.dark body {
+    @apply bg-navy-950 text-navy-50;
+  }
+  ::selection {
+    background-color: var(--color-teal-300);
+    color: var(--color-navy-900);
+  }
+  *:focus-visible {
+    @apply outline-none ring-2 ring-teal-400 ring-offset-2 ring-offset-white;
+  }
+  html.dark *:focus-visible {
+    @apply ring-offset-navy-950;
+  }
+}
+
+/* Reader-Block-Pulse beim Wieder-Fokussieren des Tabs */
+@keyframes reader-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  50% {
+    box-shadow: 0 0 0 6px var(--color-teal-400);
+  }
+}
+.pulse-once {
+  animation: reader-pulse 1.4s ease-in-out 1;
+}
+
+/* Terminal Fenster Tipp-Animation */
+@keyframes terminal-cursor {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+.terminal-cursor {
+  display: inline-block;
+  width: 0.55ch;
+  background: currentColor;
+  animation: terminal-cursor 1s steps(2, end) infinite;
+}
+
+/* Handout-Accent: aktiviert wenn ReaderShell --handout-accent setzt.
+ * Färbt Überschriften, Links und Pulse-Ring auf die handout-eigene Akzentfarbe. */
+.reader-accent h1,
+.reader-accent h2,
+.reader-accent h3 {
+  color: var(--handout-accent);
+}
+.reader-accent article h2 {
+  border-bottom: 1px solid color-mix(in oklch, var(--handout-accent) 30%, transparent);
+  padding-bottom: 0.35rem;
+}
+.reader-accent a {
+  color: var(--handout-accent);
+}
+.reader-accent .pulse-once {
+  animation-name: reader-pulse-accent;
+}
+@keyframes reader-pulse-accent {
+  0%, 100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  50% {
+    box-shadow: 0 0 0 6px var(--handout-accent);
+  }
+}
+
+/* Print-Styles für PDF-Browser-Druck */
+@media print {
+  @page {
+    size: A4;
+    margin: 18mm 16mm;
+  }
+  html,
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

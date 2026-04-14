@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Slide Handout Add-in · Installation</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f5f7fb;
+        --fg: #0a1426;
+        --fg-muted: #4b5668;
+        --card: #ffffff;
+        --card-border: #d8dee8;
+        --code-bg: #eef2f7;
+        --code-border: #d4dbe5;
+        --pre-bg: #0a1426;
+        --pre-fg: #f3f5f8;
+        --teal: #5fbfbf;
+        --teal-strong: #0d9488;
+        --salmon: #d96555;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0a0e1a;
+          --fg: #f3f5f8;
+          --fg-muted: #9aa6b8;
+          --card: #131c30;
+          --card-border: #1e2a44;
+          --code-bg: #131c30;
+          --code-border: #1e2a44;
+          --pre-bg: #060912;
+          --pre-fg: #f3f5f8;
+          --teal: #5fbfbf;
+          --teal-strong: #5fbfbf;
+          --salmon: #f07f6f;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family:
+          -apple-system, "Segoe UI", system-ui, sans-serif;
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 48px 24px 80px;
+        line-height: 1.6;
+        color: var(--fg);
+        background: var(--bg);
+      }
+      h1 {
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        margin: 0;
+        color: var(--fg);
+      }
+      h2 {
+        margin-top: 2rem;
+        font-size: 1.05rem;
+        color: var(--fg);
+      }
+      p, li {
+        color: var(--fg-muted);
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--card-border);
+        border-radius: 14px;
+        padding: 18px 22px;
+        margin: 16px 0;
+      }
+      .card p,
+      .card li,
+      .card ol,
+      .card ul {
+        color: var(--fg);
+      }
+      code {
+        display: inline-block;
+        background: var(--code-bg);
+        border: 1px solid var(--code-border);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: ui-monospace, monospace;
+        font-size: 0.9em;
+        color: var(--fg);
+      }
+      pre {
+        background: var(--pre-bg);
+        color: var(--pre-fg);
+        padding: 12px 14px;
+        border-radius: 8px;
+        overflow-x: auto;
+        font-size: 0.88rem;
+      }
+      a.btn {
+        display: inline-block;
+        background: var(--teal);
+        color: #06121a;
+        padding: 10px 18px;
+        border-radius: 999px;
+        text-decoration: none;
+        font-weight: 600;
+        box-shadow: 0 4px 14px -6px rgba(95, 191, 191, 0.55);
+      }
+      a.btn:hover {
+        background: var(--teal-strong);
+      }
+      a {
+        color: var(--teal-strong);
+      }
+      .tag {
+        display: inline-block;
+        margin-bottom: 4px;
+        font-size: 0.72rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--teal-strong);
+        font-weight: 600;
+      }
+      ol li,
+      ul li {
+        margin-bottom: 10px;
+      }
+      .muted {
+        color: var(--fg-muted);
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <p class="tag">Slide Handout</p>
+    <h1>PowerPoint Add-in installieren</h1>
+
+    <p>
+      Der Add-in sendet die aktuelle Folien-Nummer aus PowerPoint an deine
+      laufende Handout-Sitzung. So schalten sich an Folien gebundene Blöcke
+      automatisch frei, während du sprichst.
+    </p>
+
+    <p>
+      <a class="btn" href="/powerpoint-addin/manifest.xml" download="slide-handout-addin.xml">
+        manifest.xml herunterladen
+      </a>
+    </p>
+
+    <h2>Installation — PowerPoint Desktop (Windows &amp; macOS)</h2>
+    <div class="card">
+      <ol>
+        <li>
+          <strong>Einmaliges Setup: Netzwerkfreigabe oder lokaler Ordner als
+          Trusted Catalog.</strong>
+          <ul>
+            <li>
+              Windows: Einen Ordner erstellen (z.&nbsp;B.
+              <code>C:\OfficeAddins</code>). Rechtsklick →
+              <em>Eigenschaften</em> → <em>Freigabe</em> → als Netzwerkpfad
+              freigeben.
+            </li>
+            <li>
+              macOS: In PowerPoint → <em>Einstellungen</em> →
+              <em>Sicherheit &amp; Datenschutz</em> → <em>My Add-ins</em> →
+              Pfad auf einen iCloud/Desktop-Ordner setzen.
+            </li>
+          </ul>
+        </li>
+        <li>
+          PowerPoint → <em>Datei</em> → <em>Optionen</em> → <em>Trust Center</em> →
+          <em>Trust-Center-Einstellungen</em> → <em>Trusted Add-in Catalogs</em>.
+          Den Netzwerkpfad eintragen, Haken bei <em>Im Menü anzeigen</em>,
+          PowerPoint neu starten.
+        </li>
+        <li>
+          Die heruntergeladene <code>slide-handout-addin.xml</code> in den
+          freigegebenen Ordner legen.
+        </li>
+        <li>
+          PowerPoint → <em>Einfügen</em> → <em>Meine Add-Ins</em> →
+          <em>Shared Folder</em> → <strong>Slide Handout</strong> wählen.
+        </li>
+        <li>
+          Im Slide-Handout-Dashboard eine Sitzung starten → du siehst den
+          6-stelligen Pairing-Code. Im Add-in-Taskpane eingeben.
+        </li>
+      </ol>
+    </div>
+
+    <h2>Installation — PowerPoint on the web (Office 365)</h2>
+    <div class="card">
+      <ol>
+        <li>
+          PowerPoint im Browser öffnen → <em>Einfügen</em> →
+          <em>Add-ins</em> → <em>Mein Add-in hochladen</em>.
+        </li>
+        <li>
+          Die heruntergeladene <code>slide-handout-addin.xml</code> auswählen
+          und bestätigen.
+        </li>
+        <li>Pairing-Code eingeben (siehe oben).</li>
+      </ol>
+    </div>
+
+    <h2>Fehlersuche</h2>
+    <ul>
+      <li><strong>„Ungültiger Code"</strong> — nur Ziffern, genau 6 Stück.</li>
+      <li>
+        <strong>„Nicht gefunden / abgelaufen"</strong> — die Sitzung wurde
+        im Dashboard beendet oder es läuft gerade eine neue. Neu starten und
+        den aktuellen Code nutzen.
+      </li>
+      <li>
+        <strong>„Zu viele Versuche"</strong> — 30 Requests/Minute Rate-Limit
+        pro Code. Eine Minute warten.
+      </li>
+    </ul>
+
+    <p class="muted">
+      Datenschutz: Der Add-in überträgt nur die aktuelle Folien-Nummer
+      (1, 2, 3, …) — keine Folieninhalte, keine Bilder, keine Notizen.
+    </p>
+  </body>
+</html>
