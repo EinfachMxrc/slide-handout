@@ -41,3 +41,8 @@ test-results/
 # Python byte-code (deploy helper scripts)
 __pycache__/
 *.pyc
+
+# Local-only scratch / deploy helpers — KÖNNEN SECRETS ENTHALTEN, niemals committen
+.tmp-*
+homepage.html
+**/tsconfig.tsbuildinfo
