@@ -313,7 +313,7 @@ export const migrateRanks = internalMutation({
     for (const h of handouts) {
       const blocks = await ctx.db
         .query("blocks")
-        .withIndex("by_handout", (q: any) => q.eq("handoutId", h._id))
+        .withIndex("by_handout_rank", (q: any) => q.eq("handoutId", h._id))
         .collect();
       // Stable sort by existing rank (string order).
       blocks.sort((a: any, b: any) => (a.rank < b.rank ? -1 : 1));
