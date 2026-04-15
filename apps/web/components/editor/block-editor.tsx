@@ -19,6 +19,7 @@ interface ServerBlock {
   rank: string;
   title: string;
   markdown: string;
+  notes?: string;
   trigger: "slide" | "always" | "manual";
   slideNumber?: number;
   layout: "default" | "centered" | "wide" | "compact" | "terminal";
@@ -356,6 +357,7 @@ function BlockEditForm({
 }): React.ReactElement {
   const [title, setTitle] = useState(block.title);
   const [markdown, setMarkdown] = useState(block.markdown);
+  const [notes, setNotes] = useState(block.notes ?? "");
   const [trigger, setTrigger] = useState(block.trigger);
   const [slideNumber, setSlideNumber] = useState(
     block.slideNumber ? String(block.slideNumber) : "",
@@ -385,6 +387,7 @@ function BlockEditForm({
       await onSave({
         title,
         markdown,
+        notes: notes.trim() || undefined,
         trigger,
         slideNumber: slideNumber ? Number(slideNumber) : undefined,
         layout,
@@ -431,6 +434,21 @@ function BlockEditForm({
             </div>
           )}
         </div>
+        <div>
+          <label className="mb-1 flex items-center justify-between text-xs font-medium uppercase tracking-wide text-navy-400">
+            <span>Presenter-Notizen</span>
+            <span className="normal-case tracking-normal text-navy-300">
+              nur für dich sichtbar
+            </span>
+          </label>
+          <Textarea
+            rows={3}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Stichpunkte, Timing, Anekdote — landen nicht im Handout."
+          />
+        </div>
+
         <div className="flex gap-3">
           <select
             value={trigger}

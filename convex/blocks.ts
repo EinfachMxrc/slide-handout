@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalMutation } from "./_generated/server";
 import {
   requireUser,
   assertNotDemo,
@@ -140,6 +140,7 @@ export const create = mutation({
     handoutId: v.id("handouts"),
     title: v.string(),
     markdown: v.string(),
+    notes: v.optional(v.string()),
     trigger: blockTrigger,
     slideNumber: v.optional(v.number()),
     layout: blockLayout,
@@ -170,6 +171,7 @@ export const create = mutation({
       rank,
       title: args.title,
       markdown: args.markdown,
+      notes: args.notes,
       trigger: args.trigger,
       slideNumber: args.slideNumber,
       layout: args.layout,
@@ -192,6 +194,7 @@ export const update = mutation({
     id: v.id("blocks"),
     title: v.optional(v.string()),
     markdown: v.optional(v.string()),
+    notes: v.optional(v.string()),
     trigger: v.optional(blockTrigger),
     slideNumber: v.optional(v.number()),
     layout: v.optional(blockLayout),
@@ -251,6 +254,7 @@ export const duplicate = mutation({
       rank: newRank,
       title: src.title + " (Kopie)",
       markdown: src.markdown,
+      notes: src.notes,
       trigger: src.trigger,
       slideNumber: src.slideNumber,
       layout: src.layout,
@@ -286,5 +290,43 @@ export const reorder = mutation({
     await assertHandoutOwner(ctx, user, block.handoutId);
     const newRank = rankBetween(prevRank, nextRank);
     await ctx.db.patch(id, { rank: newRank, updatedAt: Date.now() });
+  },
+});
+
+/**
+ * One-shot migration: re-rank all blocks using the new LexoRank format.
+ *
+ * Old data had single-char ranks like "i", "k" (from the homegrown impl).
+ * The npm `lexorank` format is "0|hzzzzz:". Mixing formats breaks ordering,
+ * so this walks every handout, sorts blocks by their existing rank (lexical
+ * order is preserved across both formats in the order the blocks currently
+ * appear — we simply assign fresh LexoRank values in that same order).
+ *
+ * Run from the Convex dashboard once after deploying the npm-lexorank swap.
+ * Idempotent: re-running re-generates ranks but preserves display order.
+ */
+export const migrateRanks = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const handouts = await ctx.db.query("handouts").collect();
+    let rewritten = 0;
+    for (const h of handouts) {
+      const blocks = await ctx.db
+        .query("blocks")
+        .withIndex("by_handout", (q: any) => q.eq("handoutId", h._id))
+        .collect();
+      // Stable sort by existing rank (string order).
+      blocks.sort((a: any, b: any) => (a.rank < b.rank ? -1 : 1));
+      let prev: string | null = null;
+      for (const b of blocks) {
+        const next = rankAfter(prev);
+        if (b.rank !== next) {
+          await ctx.db.patch(b._id, { rank: next });
+          rewritten++;
+        }
+        prev = next;
+      }
+    }
+    return { rewritten };
   },
 });

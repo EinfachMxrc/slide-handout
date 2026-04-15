@@ -12,6 +12,7 @@ interface Block {
   _id: Id<"blocks">;
   rank: string;
   title: string;
+  notes?: string;
   trigger: "slide" | "always" | "manual";
   slideNumber?: number;
 }
@@ -66,7 +67,7 @@ export function RevealTrigger({
     sessionId ? { presenterSessionId: sessionId } : "skip",
   );
   const revealedSet = useMemo(
-    () => new Set(reveals?.map((r) => r.blockId) ?? []),
+    () => new Set(reveals?.items.map((r) => r.blockId) ?? []),
     [reveals],
   );
 
@@ -87,8 +88,9 @@ export function RevealTrigger({
     // Walk reveals array (chronological) and find the last whose block
     // still exists in sortedBlocks.
     if (!reveals) return null;
-    for (let i = reveals.length - 1; i >= 0; i--) {
-      const id = reveals[i]!.blockId;
+    const items = reveals.items;
+    for (let i = items.length - 1; i >= 0; i--) {
+      const id = items[i]!.blockId;
       if (sortedBlocks.some((b) => b._id === id)) return id;
     }
     return null;
@@ -298,6 +300,11 @@ export function RevealTrigger({
                         ? ` · Folie ${b.slideNumber}`
                         : ""}
                     </p>
+                    {b.notes && (
+                      <p className="mt-2 whitespace-pre-wrap rounded border-l-2 border-teal-400/60 bg-teal-50/40 px-2 py-1 text-xs italic text-navy-600 dark:bg-teal-950/20 dark:text-navy-300">
+                        {b.notes}
+                      </p>
+                    )}
                   </div>
                   {revealed ? (
                     <Button

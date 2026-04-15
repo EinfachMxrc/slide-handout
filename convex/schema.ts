@@ -63,6 +63,7 @@ export default defineSchema({
     rank: v.string(),
     title: v.string(),
     markdown: v.string(),
+    notes: v.optional(v.string()),
     imageS3Key: v.optional(v.string()),
     imageUrl: v.optional(v.string()),
     imageCaption: v.optional(v.string()),
@@ -140,10 +141,4 @@ export default defineSchema({
   })
     .index("by_session_lastSeenAt", ["presenterSessionId", "lastSeenAt"])
     .index("by_session_client", ["presenterSessionId", "clientId"]),
-
-  rateLimits: defineTable({
-    key: v.string(),
-    windowStart: v.number(),
-    count: v.number(),
-  }).index("by_key", ["key"]),
 });

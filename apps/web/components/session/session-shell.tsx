@@ -13,6 +13,7 @@ interface Block {
   rank: string;
   title: string;
   markdown: string;
+  notes?: string;
   trigger: "slide" | "always" | "manual";
   slideNumber?: number;
   layout: "default" | "centered" | "wide" | "compact" | "terminal";
@@ -69,7 +70,7 @@ export function SessionShell({
   }, [sessionDoc?.syncMode]);
 
   const revealedSet = useMemo(
-    () => new Set(reveals?.map((r) => r.blockId) ?? []),
+    () => new Set(reveals?.items.map((r) => r.blockId) ?? []),
     [reveals],
   );
   const sortedBlocks = useMemo(
@@ -89,8 +90,9 @@ export function SessionShell({
   );
   const lastRevealed = useMemo(() => {
     if (!reveals) return null;
-    for (let i = reveals.length - 1; i >= 0; i--) {
-      const id = reveals[i]!.blockId;
+    const items = reveals.items;
+    for (let i = items.length - 1; i >= 0; i--) {
+      const id = items[i]!.blockId;
       if (sortedBlocks.some((b) => b._id === id)) return id;
     }
     return null;
@@ -620,6 +622,11 @@ function BlockList({
                     ? ` · Folie ${b.slideNumber}`
                     : ""}
                 </p>
+                {b.notes && (
+                  <p className="mt-2 whitespace-pre-wrap rounded border-l-2 border-teal-400/60 bg-teal-400/5 px-2 py-1 text-xs italic text-navy-200">
+                    {b.notes}
+                  </p>
+                )}
               </div>
               {revealed ? (
                 <button

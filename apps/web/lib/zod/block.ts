@@ -22,6 +22,7 @@ export const BlockFontSize = z.enum(["sm", "base", "lg", "xl"]);
 export const BlockCreate = z.object({
   title: z.string().min(1).max(200),
   markdown: z.string().max(20_000),
+  notes: z.string().max(5_000).optional(),
   trigger: BlockTrigger,
   slideNumber: z.number().int().min(1).max(999).optional(),
   layout: BlockLayout.default("default"),
