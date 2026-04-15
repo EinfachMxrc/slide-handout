@@ -1,4 +1,6 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
+import { env } from "./env";
 
 /**
  * Next.js 16.2 — VServer-Deployment via standalone-Output.
@@ -10,10 +12,9 @@ import type { NextConfig } from "next";
  */
 
 const s3PublicHost = (() => {
-  const url = process.env.S3_PUBLIC_BASE_URL;
-  if (!url) return null;
+  if (!env.S3_PUBLIC_BASE_URL) return null;
   try {
-    return new URL(url);
+    return new URL(env.S3_PUBLIC_BASE_URL);
   } catch {
     return null;
   }
@@ -22,9 +23,10 @@ const s3PublicHost = (() => {
 const nextConfig: NextConfig = {
   output: "standalone",
   reactStrictMode: true,
-  experimental: {
-    sri: { algorithm: "sha256" },
-  },
+  // SRI wurde entfernt: Next 16 + Turbopack produziert integrity-Hashes, die
+  // nicht zu den ausgelieferten Chunks passen (Hydration bricht schweigend,
+  // die Seite bleibt auf dem Skeleton-Loader hängen). Unser CSP nutzt
+  // 'strict-dynamic' + Nonces, das deckt den Threat-Model-Teil bereits ab.
   images: {
     remotePatterns: s3PublicHost
       ? [
@@ -54,4 +56,22 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+/**
+ * Sentry-Wrapper: lädt das Source-Map-Plugin und verdrahtet die Tunnel-Route.
+ * Wenn kein SENTRY_AUTH_TOKEN gesetzt ist (z.B. lokal oder in PRs ohne
+ * Secrets), überspringt das Plugin den Upload still.
+ */
+export default withSentryConfig(nextConfig, {
+  org: env.SENTRY_ORG,
+  project: env.SENTRY_PROJECT,
+  authToken: env.SENTRY_AUTH_TOKEN,
+  silent: !process.env.CI,
+  // Source-Map-Upload nur wenn Token + Project gesetzt.
+  disableLogger: true,
+  // Tunnel hilft gegen Ad-Blocker, kostet eine Serverless-Route.
+  tunnelRoute: "/monitoring",
+  // Source Maps hochladen aber nicht zum Browser ausliefern.
+  widenClientFileUpload: true,
+  // Auto-Instrumentierung für Vercel-Cron etc. nicht erforderlich.
+  automaticVercelMonitors: false,
+});
