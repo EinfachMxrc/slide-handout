@@ -5,6 +5,7 @@ import { hashPassword } from "#/lib/auth/hash";
 import { serverConvex } from "#/lib/auth/session";
 import { signIn } from "#/auth";
 import { checkRateLimit } from "#/lib/auth/rate-limit";
+import { logApiError } from "#/lib/log/api";
 
 export const runtime = "nodejs";
 
@@ -41,11 +42,12 @@ export async function POST(req: Request): Promise<Response> {
       passwordHash,
       displayName: parsed.data.displayName,
     });
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "unknown";
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "unknown";
     if (msg.includes("EMAIL_ALREADY_REGISTERED")) {
       return NextResponse.json({ error: "email_taken" }, { status: 409 });
     }
+    logApiError("auth.register", err, { email: parsed.data.email });
     return NextResponse.json({ error: "create_failed" }, { status: 500 });
   }
 

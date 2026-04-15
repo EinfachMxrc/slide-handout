@@ -32,6 +32,12 @@ Thumbs.db
 .idea/
 .claude/
 
+# Test artifacts
+coverage/
+playwright-report/
+test-results/
+.playwright/
+
 # Python byte-code (deploy helper scripts)
 __pycache__/
 *.pyc

@@ -46,8 +46,9 @@ export function ReaderClient({
   // 1. Diff incoming reveals against state, batch-fetch missing.
   useEffect(() => {
     if (!reveals) return;
+    const items = reveals.items;
     const preRenderedSet = new Set(preRenderedIds);
-    const newOnes = reveals.filter(
+    const newOnes = items.filter(
       (r) =>
         !preRenderedSet.has(r.blockId) &&
         !contents.has(r.blockId) &&
@@ -56,7 +57,7 @@ export function ReaderClient({
     if (newOnes.length === 0) return;
 
     lastSeenAtRef.current = Math.max(
-      ...reveals.map((r) => r.revealedAt),
+      ...items.map((r) => r.revealedAt),
       lastSeenAtRef.current,
     );
 

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { verifyPassword } from "#/lib/auth/hash";
+import { env } from "#/env";
 import { authConfig } from "./auth.config";
 
 const CredentialsSchema = z.object({
@@ -13,9 +14,7 @@ const CredentialsSchema = z.object({
 });
 
 function convex(): ConvexHttpClient {
-  const url = process.env.NEXT_PUBLIC_CONVEX_URL;
-  if (!url) throw new Error("NEXT_PUBLIC_CONVEX_URL not set");
-  return new ConvexHttpClient(url);
+  return new ConvexHttpClient(env.NEXT_PUBLIC_CONVEX_URL);
 }
 
 /**

@@ -1,9 +1,6 @@
-import { NextResponse } from "next/server";
 import { api } from "@convex/_generated/api";
-import {
-  serverConvex,
-  getUserId,
-} from "#/lib/auth/session";
+import { serverConvex } from "#/lib/auth/session";
+import { defineRoute } from "#/lib/api/route";
 
 export const runtime = "nodejs";
 
@@ -21,30 +18,23 @@ interface Handout {
   title: string;
 }
 
-export async function GET(): Promise<Response> {
-  const userId = await getUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
-  }
-  try {
+export const GET = defineRoute({
+  name: "dashboard.sessions",
+  run: async ({ userId }) => {
     const convex = serverConvex();
     const [sessions, handouts] = (await Promise.all([
       convex.query(api.sessions.listMine, { userId }),
       convex.query(api.handouts.listMine, { userId }),
     ])) as [PresenterSession[], Handout[]];
     const titles = new Map(handouts.map((h) => [h._id, h.title]));
-    return NextResponse.json(
-      sessions.map((s) => ({
-        _id: s._id,
-        handoutId: s.handoutId,
-        handoutTitle: titles.get(s.handoutId) ?? "—",
-        status: s.status,
-        startedAt: s.startedAt,
-        endedAt: s.endedAt,
-        audienceCount: s.audienceCount,
-      })),
-    );
-  } catch {
-    return NextResponse.json({ error: "server" }, { status: 500 });
-  }
-}
+    return sessions.map((s) => ({
+      _id: s._id,
+      handoutId: s.handoutId,
+      handoutTitle: titles.get(s.handoutId) ?? "—",
+      status: s.status,
+      startedAt: s.startedAt,
+      endedAt: s.endedAt,
+      audienceCount: s.audienceCount,
+    }));
+  },
+});

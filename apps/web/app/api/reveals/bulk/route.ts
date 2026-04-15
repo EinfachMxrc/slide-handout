@@ -1,30 +1,22 @@
-import { NextResponse } from "next/server";
+import { z } from "zod";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
-import {
-  serverConvex,
-  getUserId,
-} from "#/lib/auth/session";
+import { serverConvex } from "#/lib/auth/session";
+import { defineRoute } from "#/lib/api/route";
 
 export const runtime = "nodejs";
 
-interface Body {
-  action: "all" | "none";
-  presenterSessionId: string;
-}
+const Body = z.object({
+  action: z.enum(["all", "none"]),
+  presenterSessionId: z.string().min(1),
+});
 
-export async function POST(req: Request): Promise<Response> {
-  const userId = await getUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
-  }
-  const body = (await req.json().catch(() => null)) as Body | null;
-  if (!body?.action || !body.presenterSessionId) {
-    return NextResponse.json({ error: "missing" }, { status: 400 });
-  }
-  const convex = serverConvex();
-  const id = body.presenterSessionId as Id<"presenterSessions">;
-  try {
+export const POST = defineRoute<Record<string, string>, z.infer<typeof Body>>({
+  name: "reveals.bulk",
+  body: Body,
+  run: async ({ userId, body }) => {
+    const convex = serverConvex();
+    const id = body.presenterSessionId as Id<"presenterSessions">;
     if (body.action === "all") {
       await convex.mutation(api.reveals.revealAll, {
         userId,
@@ -36,8 +28,5 @@ export async function POST(req: Request): Promise<Response> {
         presenterSessionId: id,
       });
     }
-    return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ error: "server" }, { status: 500 });
-  }
-}
+  },
+});

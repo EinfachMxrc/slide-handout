@@ -8,7 +8,7 @@ import { requireUser, assertHandoutOwner } from "./_lib/authHelpers";
  * Subscription pattern:
  *
  *   client →  useQuery(reveals.streamForSession, { sessionId })
- *          ← [{ blockId, revealedAt }, ...]   (only IDs, ~ 50 bytes each)
+ *          ← { items: [{ blockId, revealedAt }, ...], truncated }
  *
  * On change, client diffs against local cache, then fires a single
  *   client →  blocks.byIds({ ids: missing })
@@ -17,7 +17,16 @@ import { requireUser, assertHandoutOwner } from "./_lib/authHelpers";
  * The presenter mutation `reveals.reveal(...)` is idempotent in code:
  * Convex has no declarative unique constraints, so we check via the
  * `by_session_block` index inside the transaction.
+ *
+ * PAGINATION: reveals are capped at MAX_REVEALS per subscription to keep
+ * the realtime payload bounded. At 500, this covers any realistic deck
+ * (≥ 500 blocks is a pathological handout). If hit, `truncated: true`
+ * signals the client to warn the presenter. Older reveals win because
+ * the presenter reveals from earliest → latest; the newest tail stays
+ * deliverable without breaking diff ordering.
  */
+
+const MAX_REVEALS = 500;
 
 export const streamForSession = query({
   args: { presenterSessionId: v.id("presenterSessions") },
@@ -28,11 +37,15 @@ export const streamForSession = query({
         q.eq("presenterSessionId", presenterSessionId),
       )
       .order("asc")
-      .collect();
-    return reveals.map((r) => ({
-      blockId: r.blockId,
-      revealedAt: r.revealedAt,
-    }));
+      .take(MAX_REVEALS + 1);
+    const truncated = reveals.length > MAX_REVEALS;
+    const items = (truncated ? reveals.slice(0, MAX_REVEALS) : reveals).map(
+      (r: any) => ({
+        blockId: r.blockId,
+        revealedAt: r.revealedAt,
+      }),
+    );
+    return { items, truncated };
   },
 });
 

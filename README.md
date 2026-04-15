@@ -70,7 +70,7 @@ Live: **[handout.einfachmxrc.de](https://handout.einfachmxrc.de)**
 │   ├── blocks.ts  reveals.ts  sessions.ts
 │   ├── audience.ts              # Heartbeat + Live-Count
 │   ├── storage.ts               # S3-Presigning Action
-│   ├── rateLimit.ts  crons.ts
+│   ├── crons.ts                 # (Rate-Limit läuft in-memory in apps/web/lib/auth/rate-limit.ts)
 │   └── lexorank.ts              # Fractional Ranking
 ├── .deploy/                     # Python-Scripts für VServer-Setup
 └── docker-compose.yml           # handout-web Service (Caddy-ready)

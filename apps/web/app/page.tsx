@@ -14,7 +14,7 @@ export default async function LandingPage(): Promise<React.ReactElement> {
   const loggedIn = !!session;
 
   return (
-    <div className="min-h-screen bg-navy-950 text-white">
+    <div className="min-h-screen bg-paper text-ink">
       <LandingNav loggedIn={loggedIn} email={session?.email} />
       <Hero loggedIn={loggedIn} />
       <HowItWorks />

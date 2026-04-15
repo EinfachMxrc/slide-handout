@@ -8,6 +8,7 @@ import {
   unauthorized,
   verifyBearer,
 } from "#/lib/addin/token";
+import { logApiError } from "#/lib/log/api";
 
 export const runtime = "nodejs";
 
@@ -40,10 +41,11 @@ export async function POST(req: Request): Promise<Response> {
       slideNumber: Math.floor(body.slideNumber),
     });
     return ok({ ok: true });
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "unknown";
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "unknown";
     if (msg.includes("FORBIDDEN")) return bad("forbidden", 403);
     if (msg.includes("SESSION_NOT_FOUND")) return bad("session_not_found", 404);
+    logApiError("addin.advance", err, { userId });
     return bad("server", 500);
   }
 }

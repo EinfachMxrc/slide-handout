@@ -4,14 +4,16 @@ import { hashPassword } from "#/lib/auth/hash";
 import { serverConvex } from "#/lib/auth/session";
 import { signIn } from "#/auth";
 import { checkRateLimit } from "#/lib/auth/rate-limit";
+import { env } from "#/env";
+import { logApiError } from "#/lib/log/api";
 
 export const runtime = "nodejs";
 
-const DEMO_EMAIL = process.env.DEMO_EMAIL ?? "demo@slide-handout.app";
 // Feste, öffentlich-bekannte Demo-Zugangsdaten. Der Account kann nichts
 // Schreiben (assertNotDemo blockt alle Mutations auf Handouts/Blocks),
 // daher ist das unkritisch.
-const DEMO_PASSWORD = process.env.DEMO_PASSWORD ?? "slide-handout-demo-2026";
+const DEMO_EMAIL = env.DEMO_EMAIL;
+const DEMO_PASSWORD = env.DEMO_PASSWORD;
 const DEMO_NAME = "Demo-Konto";
 
 /**
@@ -44,10 +46,11 @@ export async function POST(req: Request): Promise<Response> {
         displayName: DEMO_NAME,
         isDemo: true,
       });
-    } catch (e) {
+    } catch (err) {
       // Race: ein parallel laufender Demo-Login hat's angelegt — ignorieren.
-      const msg = e instanceof Error ? e.message : "";
+      const msg = err instanceof Error ? err.message : "";
       if (!msg.includes("EMAIL_ALREADY_REGISTERED")) {
+        logApiError("auth.demo.createUser", err, {});
         return NextResponse.json({ error: "create_failed" }, { status: 500 });
       }
     }
@@ -68,8 +71,8 @@ export async function POST(req: Request): Promise<Response> {
   // 2. Inhalt seeden — idempotent.
   try {
     await convex.mutation(api.demo.seedIfEmpty, { userId: user._id });
-  } catch {
-    /* schon seeded ist ok, unbekannte Fehler schlucken wir hier nicht weiter */
+  } catch (err) {
+    logApiError("auth.demo.seed", err, { userId: user._id });
   }
 
   // 3. Via Auth.js einloggen.
@@ -79,7 +82,8 @@ export async function POST(req: Request): Promise<Response> {
       password: DEMO_PASSWORD,
       redirect: false,
     });
-  } catch {
+  } catch (err) {
+    logApiError("auth.demo.signIn", err, { userId: user._id });
     return NextResponse.json({ error: "login_failed" }, { status: 500 });
   }
 

@@ -14,9 +14,17 @@
     "build": "pnpm --filter web build",
     "start": "pnpm --filter web start",
     "typecheck": "pnpm -r typecheck",
-    "lint": "pnpm -r lint"
+    "lint": "pnpm -r lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install --with-deps chromium"
   },
   "devDependencies": {
-    "typescript": "^6.0.0"
+    "@playwright/test": "^1.59.1",
+    "@vitest/coverage-v8": "^4.1.4",
+    "typescript": "^6.0.0",
+    "vitest": "^4.1.4"
   }
 }

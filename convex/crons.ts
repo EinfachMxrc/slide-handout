@@ -4,7 +4,6 @@ import { internal } from "./_generated/api";
 
 const SESSION_AUTO_END_MS = 12 * 60 * 60 * 1000; // 12 hours
 const EXPIRED_AUTH_GRACE_MS = 24 * 60 * 60 * 1000;
-const RATE_LIMIT_GC_MS = 10 * 60 * 1000;
 
 export const sweepStaleSessions = internalMutation({
   args: {},
@@ -31,15 +30,8 @@ export const sweepStaleSessions = internalMutation({
       }
     }
 
-    // 3. GC rate-limit windows.
-    const buckets = await ctx.db.query("rateLimits").collect();
-    for (const r of buckets) {
-      if (now - r.windowStart > RATE_LIMIT_GC_MS) {
-        await ctx.db.delete(r._id);
-      }
-    }
-
-    // 4. GC stale audience heartbeats (anything older than 5 min).
+    // 3. GC stale audience heartbeats (anything older than 5 min).
+    //    (Rate-Limiting läuft jetzt über Upstash Redis, siehe apps/web/lib/auth/rate-limit.ts.)
     const heartbeats = await ctx.db.query("audienceHeartbeats").collect();
     for (const h of heartbeats) {
       if (now - h.lastSeenAt > 5 * 60_000) {

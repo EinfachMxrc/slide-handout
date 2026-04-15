@@ -1,57 +1,34 @@
-import { NextResponse } from "next/server";
+import { z } from "zod";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
-import {
-  serverConvex,
-  getUserId,
-} from "#/lib/auth/session";
+import { serverConvex } from "#/lib/auth/session";
+import { defineRoute } from "#/lib/api/route";
 
 export const runtime = "nodejs";
 
-export async function DELETE(
-  _req: Request,
-  ctx: { params: Promise<{ id: string }> },
-): Promise<Response> {
-  const userId = await getUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
-  }
-  const { id } = await ctx.params;
-  try {
+type Params = { id: string };
+
+export const DELETE = defineRoute<Params>({
+  name: "sessions.end",
+  run: async ({ userId, params }) => {
     await serverConvex().mutation(api.sessions.end, {
       userId,
-      presenterSessionId: id as Id<"presenterSessions">,
+      presenterSessionId: params.id as Id<"presenterSessions">,
     });
-    return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ error: "server" }, { status: 500 });
-  }
-}
+  },
+});
 
-/** Slide advance — used by the future PowerPoint Add-in. */
-export async function PATCH(
-  req: Request,
-  ctx: { params: Promise<{ id: string }> },
-): Promise<Response> {
-  const userId = await getUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
-  }
-  const { id } = await ctx.params;
-  const body = (await req.json().catch(() => null)) as
-    | { slideNumber?: number }
-    | null;
-  if (typeof body?.slideNumber !== "number") {
-    return NextResponse.json({ error: "missing_slideNumber" }, { status: 400 });
-  }
-  try {
+/** Slide advance — used by the PowerPoint Add-in (session-cookie path). */
+const AdvanceBody = z.object({ slideNumber: z.number().int().min(1) });
+
+export const PATCH = defineRoute<Params, z.infer<typeof AdvanceBody>>({
+  name: "sessions.advanceSlide",
+  body: AdvanceBody,
+  run: async ({ userId, params, body }) => {
     await serverConvex().mutation(api.sessions.advanceSlide, {
       userId,
-      presenterSessionId: id as Id<"presenterSessions">,
+      presenterSessionId: params.id as Id<"presenterSessions">,
       slideNumber: body.slideNumber,
     });
-    return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ error: "server" }, { status: 500 });
-  }
-}
+  },
+});

@@ -4,6 +4,7 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { getUserId } from "#/lib/auth/session";
 import { SessionShell } from "#/components/session/session-shell";
+import { env } from "#/env";
 
 export default async function SessionPage({
   params,
@@ -22,10 +23,7 @@ export default async function SessionPage({
 
   const blocks = await fetchQuery(api.blocks.list, { userId, handoutId });
 
-  const publicUrl =
-    (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000") +
-    "/h/" +
-    handout.publicToken;
+  const publicUrl = `${env.NEXT_PUBLIC_SITE_URL}/h/${handout.publicToken}`;
 
   return (
     <SessionShell

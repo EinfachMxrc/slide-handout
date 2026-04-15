@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
 import { authConfig } from "./auth.config";
+import { env } from "./env";
 
 /**
  * Next.js 16 Proxy (ex-middleware).
@@ -27,16 +28,19 @@ function generateNonce(): string {
 function buildCsp(nonce: string): string {
   const convexHost = (() => {
     try {
-      return new URL(process.env.NEXT_PUBLIC_CONVEX_URL ?? "").host;
+      return new URL(env.NEXT_PUBLIC_CONVEX_URL).host;
     } catch {
       return "";
     }
   })();
   const convexWs = convexHost ? `wss://${convexHost}` : "";
   const convexHttps = convexHost ? `https://${convexHost}` : "";
-  const s3Public = process.env.S3_PUBLIC_BASE_URL ?? "";
+  const s3Public = env.S3_PUBLIC_BASE_URL ?? "";
+  // Sentry tunnel route (siehe next.config.ts withSentryConfig) — darf aus
+  // JS erreichbar sein, auch wenn es auf derselben Origin liegt.
+  const sentryReport = env.NEXT_PUBLIC_SENTRY_CSP_REPORT_URI;
 
-  return [
+  const directives = [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
     "style-src 'self' 'unsafe-inline'",
@@ -47,7 +51,17 @@ function buildCsp(nonce: string): string {
     "base-uri 'self'",
     "form-action 'self'",
     "object-src 'none'",
-  ].join("; ");
+  ];
+
+  if (sentryReport) {
+    // Legacy `report-uri` für Safari + alte Browser, moderner `report-to`
+    // für Chrome/Firefox/Edge. Gruppe `csp-endpoint` wird im separaten
+    // `Reporting-Endpoints`-Header definiert.
+    directives.push(`report-uri ${sentryReport}`);
+    directives.push("report-to csp-endpoint");
+  }
+
+  return directives.join("; ");
 }
 
 const COMMON_HEADERS: Record<string, string> = {
@@ -71,6 +85,15 @@ export default auth((req) => {
   const res = NextResponse.next({ request: { headers: reqHeaders } });
   for (const [k, v] of Object.entries(COMMON_HEADERS)) res.headers.set(k, v);
   res.headers.set("Content-Security-Policy", buildCsp(nonce));
+
+  // Reporting-Endpoints (moderner Standard, ersetzt Report-To).
+  // Verlinkt die `csp-endpoint`-Gruppe aus der CSP mit der Sentry-URL.
+  if (env.NEXT_PUBLIC_SENTRY_CSP_REPORT_URI) {
+    res.headers.set(
+      "Reporting-Endpoints",
+      `csp-endpoint="${env.NEXT_PUBLIC_SENTRY_CSP_REPORT_URI}"`
+    );
+  }
   return res;
 });
 

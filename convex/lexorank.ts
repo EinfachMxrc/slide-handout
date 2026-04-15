@@ -1,23 +1,35 @@
 /**
- * Minimal LexoRank implementation — fractional ordering for drag-and-drop.
+ * LexoRank wrapper — fractional ordering for drag-and-drop.
  *
- * Ranks are base-36 strings using digits/lowercase letters. Lexicographic
- * comparison matches the desired order. Inserting between two ranks produces
- * a new string by midpointing the digit sequences. Append-only "between"
- * operations never need rebalancing.
+ * Delegates to the `lexorank` npm package (JIRA-style reference impl) but
+ * exposes the same `rankBetween` / `rankAfter` / `rankBefore` / `initialRank`
+ * API the rest of the code was using. The package handles the tricky
+ * midpoint / bucket / rebalance edge cases we previously hand-rolled.
  *
- * Initial bookends: MIN = "0", MAX = "z" (we use "1".."y" as the working range
- * and reserve outer space for safe extension on either side).
+ * Rank strings now look like "0|hzzzzz:" (bucket + base-36 decimal). These
+ * sort lexicographically — same contract as before. Old 1-char ranks
+ * ("i", "k") from earlier builds need migration: see `migrateRanks` in
+ * `convex/blocks.ts`.
  */
-const ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyz";
-const BASE = ALPHABET.length;
-const MIN_CHAR = ALPHABET[1]; // "1"
-const MAX_CHAR = ALPHABET[BASE - 2]; // "y"
+import { LexoRank } from "lexorank";
 
-function charIndex(ch: string): number {
-  const i = ALPHABET.indexOf(ch);
-  if (i < 0) throw new Error(`Invalid LexoRank char: ${ch}`);
-  return i;
+function parseOrMin(s: string | null): LexoRank {
+  if (!s) return LexoRank.min();
+  try {
+    return LexoRank.parse(s);
+  } catch {
+    // Legacy single-char rank ("i"); replace with a middle bucket value.
+    return LexoRank.middle();
+  }
+}
+
+function parseOrMax(s: string | null): LexoRank {
+  if (!s) return LexoRank.max();
+  try {
+    return LexoRank.parse(s);
+  } catch {
+    return LexoRank.middle();
+  }
 }
 
 /** Pick a rank lexicographically between `prev` and `next`. */
@@ -25,46 +37,34 @@ export function rankBetween(
   prev: string | null,
   next: string | null,
 ): string {
-  const p = prev ?? "";
-  const n = next ?? "";
-  let i = 0;
-  let result = "";
-  while (true) {
-    const pc = i < p.length ? charIndex(p[i]!) : 0;
-    const nc = i < n.length ? charIndex(n[i]!) : BASE - 1;
-    if (pc === nc) {
-      result += p[i] ?? n[i] ?? MIN_CHAR;
-      i++;
-      continue;
-    }
-    const mid = Math.floor((pc + nc) / 2);
-    if (mid > pc) {
-      result += ALPHABET[mid];
-      return result;
-    }
-    // Difference is 1 — descend by emitting prev's char and continuing.
-    result += ALPHABET[pc];
-    i++;
-    // Need to find midpoint of pc+1..MAX (n is "later" so we go above pc).
-    // Loop continues; eventually we either find space or append a digit beyond p.
-    if (i >= p.length && i >= n.length) {
-      result += ALPHABET[Math.floor(BASE / 2)];
-      return result;
-    }
-  }
+  const left = parseOrMin(prev);
+  const right = parseOrMax(next);
+  return left.between(right).toString();
 }
 
 export function initialRank(): string {
-  return ALPHABET[Math.floor(BASE / 2)]!; // "i"
+  return LexoRank.middle().toString();
 }
 
 export function rankAfter(prev: string | null): string {
-  return rankBetween(prev, null);
+  if (!prev) return initialRank();
+  try {
+    return LexoRank.parse(prev).genNext().toString();
+  } catch {
+    return initialRank();
+  }
 }
 
 export function rankBefore(next: string | null): string {
-  return rankBetween(null, next);
+  if (!next) return initialRank();
+  try {
+    return LexoRank.parse(next).genPrev().toString();
+  } catch {
+    return initialRank();
+  }
 }
 
-export const LEXORANK_MIN_CHAR = MIN_CHAR;
-export const LEXORANK_MAX_CHAR = MAX_CHAR;
+// Kept for backwards-compat with tests/importers that inspect bounds.
+// LexoRank's min/max are "0|000000:" and "0|zzzzzz:" respectively.
+export const LEXORANK_MIN_CHAR = "0";
+export const LEXORANK_MAX_CHAR = "z";

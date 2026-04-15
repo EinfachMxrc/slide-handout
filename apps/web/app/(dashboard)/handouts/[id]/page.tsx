@@ -8,6 +8,7 @@ import { BlockEditor } from "#/components/editor/block-editor";
 import { Card } from "#/components/ui/card";
 import { HandoutHeader } from "#/components/dashboard/handout-header";
 import { HandoutSettings } from "#/components/editor/handout-settings";
+import { env } from "#/env";
 
 export default async function HandoutEditorPage({
   params,
@@ -24,8 +25,7 @@ export default async function HandoutEditorPage({
   if (!handout) notFound();
   const blocks = await fetchQuery(api.blocks.list, { userId, handoutId });
 
-  const publicUrl =
-    (process.env.NEXT_PUBLIC_SITE_URL ?? "") + "/h/" + handout.publicToken;
+  const publicUrl = `${env.NEXT_PUBLIC_SITE_URL}/h/${handout.publicToken}`;
 
   return (
     <div className="space-y-6">

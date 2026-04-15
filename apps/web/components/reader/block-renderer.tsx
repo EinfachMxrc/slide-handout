@@ -2,6 +2,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
 import { sanitizeSchema } from "#/lib/sanitize";
+import { env } from "#/env";
 import { TerminalCode } from "./terminal-code";
 import { TerminalBlock, type TerminalVariant } from "./terminal-block";
 import type { Id } from "@convex/_generated/dataModel";
@@ -46,7 +47,7 @@ const fontSizeClass: Record<RenderableBlock["fontSize"], string> = {
 function resolveImage(block: RenderableBlock): string | null {
   if (block.imageUrl && /^https:\/\//.test(block.imageUrl)) return block.imageUrl;
   if (block.imageS3Key) {
-    const base = process.env.NEXT_PUBLIC_S3_PUBLIC_BASE_URL ?? "";
+    const base = env.NEXT_PUBLIC_S3_PUBLIC_BASE_URL;
     if (!base) return null;
     return `${base}/${block.imageS3Key}`;
   }

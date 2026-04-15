@@ -1,8 +1,22 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
+import { Inter, Instrument_Serif } from "next/font/google";
 import { ConvexClientProvider } from "#/components/providers/convex-provider";
 import { ThemeProvider } from "#/components/providers/theme-provider";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-sans",
+  display: "swap",
+});
+const display = Instrument_Serif({
+  weight: "400",
+  style: ["normal", "italic"],
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-display",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Slide Handout",
@@ -27,7 +41,11 @@ export default async function RootLayout({
   const nonce = h.get("x-csp-nonce") ?? undefined;
 
   return (
-    <html lang="de" suppressHydrationWarning>
+    <html
+      lang="de"
+      suppressHydrationWarning
+      className={`${inter.variable} ${display.variable}`}
+    >
       <body>
         <ThemeProvider>
           <ConvexClientProvider>{children}</ConvexClientProvider>

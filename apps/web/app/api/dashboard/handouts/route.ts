@@ -1,23 +1,11 @@
-import { NextResponse } from "next/server";
 import { api } from "@convex/_generated/api";
-import {
-  serverConvex,
-  getUserId,
-} from "#/lib/auth/session";
+import { serverConvex } from "#/lib/auth/session";
+import { defineRoute } from "#/lib/api/route";
 
 export const runtime = "nodejs";
 
-export async function GET(): Promise<Response> {
-  const userId = await getUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
-  }
-  try {
-    const handouts = await serverConvex().query(api.handouts.listMine, {
-      userId,
-    });
-    return NextResponse.json(handouts);
-  } catch {
-    return NextResponse.json({ error: "server" }, { status: 500 });
-  }
-}
+export const GET = defineRoute({
+  name: "handouts.listMine",
+  run: async ({ userId }) =>
+    serverConvex().query(api.handouts.listMine, { userId }),
+});

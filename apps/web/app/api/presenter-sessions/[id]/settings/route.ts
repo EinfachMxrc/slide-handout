@@ -1,37 +1,27 @@
-import { NextResponse } from "next/server";
+import { z } from "zod";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
-import {
-  serverConvex,
-  getUserId,
-} from "#/lib/auth/session";
+import { serverConvex } from "#/lib/auth/session";
+import { defineRoute } from "#/lib/api/route";
 
 export const runtime = "nodejs";
 
-export async function PATCH(
-  req: Request,
-  ctx: { params: Promise<{ id: string }> },
-): Promise<Response> {
-  const userId = await getUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
-  }
-  const { id } = await ctx.params;
-  const body = (await req.json().catch(() => null)) as
-    | { syncMode?: "auto" | "hybrid" | "manual"; currentSlide?: number }
-    | null;
-  if (!body) {
-    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
-  }
-  try {
+type Params = { id: string };
+
+const SettingsBody = z.object({
+  syncMode: z.enum(["auto", "hybrid", "manual"]).optional(),
+  currentSlide: z.number().int().min(1).optional(),
+});
+
+export const PATCH = defineRoute<Params, z.infer<typeof SettingsBody>>({
+  name: "sessions.updateSettings",
+  body: SettingsBody,
+  run: async ({ userId, params, body }) => {
     await serverConvex().mutation(api.sessions.updateSettings, {
       userId,
-      presenterSessionId: id as Id<"presenterSessions">,
+      presenterSessionId: params.id as Id<"presenterSessions">,
       syncMode: body.syncMode,
       currentSlide: body.currentSlide,
     });
-    return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ error: "server" }, { status: 500 });
-  }
-}
+  },
+});

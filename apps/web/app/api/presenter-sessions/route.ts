@@ -1,31 +1,21 @@
-import { NextResponse } from "next/server";
+import { z } from "zod";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
-import {
-  serverConvex,
-  getUserId,
-} from "#/lib/auth/session";
+import { serverConvex } from "#/lib/auth/session";
+import { defineRoute } from "#/lib/api/route";
 
 export const runtime = "nodejs";
 
-export async function POST(req: Request): Promise<Response> {
-  const userId = await getUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
-  }
-  const body = (await req.json().catch(() => null)) as
-    | { handoutId?: string }
-    | null;
-  if (!body?.handoutId) {
-    return NextResponse.json({ error: "missing_handoutId" }, { status: 400 });
-  }
-  try {
+const Body = z.object({ handoutId: z.string().min(1) });
+
+export const POST = defineRoute<Record<string, string>, z.infer<typeof Body>>({
+  name: "sessions.start",
+  body: Body,
+  run: async ({ userId, body }) => {
     const id = await serverConvex().mutation(api.sessions.start, {
       userId,
       handoutId: body.handoutId as Id<"handouts">,
     });
-    return NextResponse.json({ id });
-  } catch {
-    return NextResponse.json({ error: "server" }, { status: 500 });
-  }
-}
+    return { id };
+  },
+});
