@@ -16,7 +16,9 @@ services:
     networks:
       - leasingradar_default
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/"]
+      # 127.0.0.1 statt localhost: Alpine resolved localhost primary via IPv6 ::1,
+      # Next.js standalone bindet aber nur IPv4 0.0.0.0 (HOSTNAME im Dockerfile).
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/"]
       interval: 30s
       timeout: 5s
       retries: 3

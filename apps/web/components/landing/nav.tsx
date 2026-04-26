@@ -19,17 +19,9 @@ export function LandingNav({
 }): React.ReactElement {
   return (
     <nav className="absolute inset-x-0 top-0 z-20">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-        <div className="flex items-center gap-8">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-sm font-semibold tracking-tight text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.25)]"
-          >
-            <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-white/15 text-[13px] font-display italic backdrop-blur-md">
-              H
-            </span>
-            Slide&nbsp;Handout
-          </Link>
+      <div className="mx-auto flex max-w-7xl items-center px-6 py-5">
+        {/* Linke Section: Menü-Links (flex-1 damit sie den Raum links füllt) */}
+        <div className="flex flex-1 items-center justify-start">
           <div className="hidden gap-6 text-sm text-white/85 sm:flex">
             <Link href="#features" className="transition hover:text-white">
               Features
@@ -42,7 +34,28 @@ export function LandingNav({
             </Link>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-sm">
+
+        {/* Mitte: Brand-Slot — hier landet der FLIP vom Hero-Wordmark.
+            flex-shrink-0 damit es sich nicht stauchen lässt. */}
+        <div className="flex flex-shrink-0 items-center justify-center">
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-sm font-semibold tracking-tight text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.25)]"
+          >
+            {/* Brand-Slot: Hero-Wordmark fliegt hier rein. Initial hidden,
+                wird von air-intro-scene nach dem FLIP enthüllt. */}
+            <span
+              id="air-brand-target"
+              className="font-display italic"
+              style={{ opacity: 0 }}
+            >
+              Cue
+            </span>
+          </Link>
+        </div>
+
+        {/* Rechte Section: Auth / CTAs (flex-1, rechts ausgerichtet) */}
+        <div className="flex flex-1 items-center justify-end gap-2 text-sm">
           {loggedIn ? (
             <>
               {email && (

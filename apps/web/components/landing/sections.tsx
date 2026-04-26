@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { BrowserMockup } from "./mockup";
 import { DemoButton } from "./demo-button";
+import { Reveal } from "./reveal";
+import { AnimatedText } from "./animated-text";
+import { StorytellingTriptych, type TriptychStep } from "./storytelling-triptych";
 
 /**
  * Paper-Sections — sitzen unter dem Sky-Hero. Editorial-Stack mit
@@ -21,7 +24,7 @@ function Eyebrow({ children }: { children: React.ReactNode }): React.ReactElemen
 }
 
 export function HowItWorks(): React.ReactElement {
-  const steps = [
+  const steps: TriptychStep[] = [
     {
       n: "01",
       title: "Handout schreiben",
@@ -36,52 +39,55 @@ export function HowItWorks(): React.ReactElement {
     },
     {
       n: "03",
-      title: "Vortragen & steuern",
+      title: "Vortragen",
+      accent: "& steuern.",
       body:
         "Folien weiterschalten — manuell im Dashboard oder automatisch per PowerPoint-Add-in. Inhalte erscheinen beim Publikum.",
     },
   ];
   return (
-    <section id="how" className="bg-paper text-ink">
-      <div className="mx-auto max-w-7xl px-6 py-28 sm:py-36">
-        <div className="grid gap-16 md:grid-cols-12 md:items-end">
-          <div className="md:col-span-5">
-            <Eyebrow>So funktioniert&apos;s</Eyebrow>
-            <h2 className="mt-6 font-display text-5xl leading-[0.95] tracking-tight sm:text-6xl">
-              In drei Schritten{" "}
-              <em className="font-display italic text-ink-mute">live.</em>
-            </h2>
-          </div>
-          <p className="text-base leading-relaxed text-ink-mute md:col-span-6 md:col-start-7">
-            Vom leeren Editor bis zum Publikum, das mitliest, sind es drei
-            Schritte. Kein Setup, kein PDF-Versand, keine Spoiler.
-          </p>
-        </div>
-
-        <div className="mt-20 grid gap-px overflow-hidden rounded-card bg-paper-line sm:grid-cols-3">
-          {steps.map((s) => (
-            <div
-              key={s.n}
-              className="group relative bg-paper p-8 transition hover:bg-paper-soft sm:p-10"
-            >
-              <span className="font-display text-4xl italic text-ink-mute/60">
-                {s.n}
-              </span>
-              <h3 className="mt-6 text-xl font-semibold tracking-tight">
-                {s.title}
-              </h3>
-              <p className="mt-3 text-sm leading-relaxed text-ink-mute">
-                {s.body}
-              </p>
+    <>
+      {/* Intro-Headline für die Pin-Story — steht im normalen Flow oberhalb des Pins. */}
+      <section id="how" className="bg-paper text-ink">
+        <div className="mx-auto max-w-7xl px-6 pt-28 sm:pt-36">
+          <div className="grid gap-16 md:grid-cols-12 md:items-end">
+            <div className="md:col-span-5">
+              <Eyebrow>So funktioniert&apos;s</Eyebrow>
+              <AnimatedText
+                as="h2"
+                className="mt-6 font-display text-5xl leading-[0.95] tracking-tight sm:text-6xl"
+                lines={["In drei Schritten", "live."]}
+                ariaLabel="In drei Schritten live."
+              />
             </div>
-          ))}
+            <Reveal
+              delay={1}
+              className="text-base leading-relaxed text-ink-mute md:col-span-6 md:col-start-7"
+            >
+              Vom leeren Editor bis zum Publikum, das mitliest, sind es drei
+              Schritte. Kein Setup, kein PDF-Versand, keine Spoiler.
+            </Reveal>
+          </div>
         </div>
+      </section>
 
-        <div className="mt-16">
-          <BrowserMockup />
+      {/* Triptych-Pin — die 3 Schritte als cineastischer Crossfade beim Scrollen. */}
+      <StorytellingTriptych
+        steps={steps}
+        scrollMultiplier={2.4}
+        className="bg-paper text-ink"
+        trailing={<span>↓ weiter scrollen</span>}
+      />
+
+      {/* Browser-Mockup schließt die Sektion ab, direkt nach dem Pin. */}
+      <section className="bg-paper text-ink">
+        <div className="mx-auto max-w-7xl px-6 pb-28 sm:pb-36">
+          <Reveal>
+            <BrowserMockup />
+          </Reveal>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }
 
@@ -123,21 +129,27 @@ export function Features(): React.ReactElement {
       <div className="mx-auto max-w-7xl px-6 py-28 sm:py-36">
         <div className="max-w-2xl">
           <Eyebrow>Was es kann</Eyebrow>
-          <h2 className="mt-6 font-display text-5xl leading-[0.95] tracking-tight sm:text-6xl">
-            Anders als ein{" "}
-            <em className="font-display italic text-ink-mute">PDF.</em>
-          </h2>
+          <AnimatedText
+            as="h2"
+            className="mt-6 font-display text-5xl leading-[0.95] tracking-tight sm:text-6xl"
+            lines={["Anders als", "ein PDF."]}
+            ariaLabel="Anders als ein PDF."
+          />
         </div>
         <div className="mt-16 grid gap-px overflow-hidden rounded-card bg-paper-line md:grid-cols-3">
-          {items.map((it) => (
-            <div key={it.title} className="bg-paper p-7 sm:p-8">
+          {items.map((it, i) => (
+            <Reveal
+              key={it.title}
+              delay={((i % 4) + 1) as 1 | 2 | 3 | 4}
+              className="bg-paper p-7 sm:p-8"
+            >
               <h3 className="text-base font-semibold tracking-tight">
                 {it.title}
               </h3>
               <p className="mt-3 text-sm leading-relaxed text-ink-mute">
                 {it.body}
               </p>
-            </div>
+            </Reveal>
           ))}
         </div>
       </div>
@@ -170,25 +182,32 @@ export function Audiences(): React.ReactElement {
         <div className="grid gap-16 md:grid-cols-12">
           <div className="md:col-span-5">
             <Eyebrow>Für wen</Eyebrow>
-            <h2 className="mt-6 font-display text-5xl leading-[0.95] tracking-tight sm:text-6xl">
-              Für alle, die{" "}
-              <em className="font-display italic text-ink-mute">live</em>{" "}
-              präsentieren.
-            </h2>
-            <p className="mt-6 max-w-md text-sm leading-relaxed text-ink-mute">
-              Hörsaal, Meetingraum oder Bühne — überall, wo Zuhörer
-              Begleitmaterial brauchen, aber nicht alles auf einmal sehen
-              sollen.
-            </p>
+            <AnimatedText
+              as="h2"
+              className="mt-6 font-display text-5xl leading-[0.95] tracking-tight sm:text-6xl"
+              lines={["Für alle, die", "live präsentieren."]}
+              ariaLabel="Für alle, die live präsentieren."
+            />
+            <Reveal delay={1}>
+              <p className="mt-6 max-w-md text-sm leading-relaxed text-ink-mute">
+                Hörsaal, Meetingraum oder Bühne — überall, wo Zuhörer
+                Begleitmaterial brauchen, aber nicht alles auf einmal sehen
+                sollen.
+              </p>
+            </Reveal>
           </div>
           <div className="grid gap-px overflow-hidden rounded-card bg-paper-line md:col-span-7 md:grid-cols-2">
-            {list.map((a) => (
-              <div key={a.title} className="bg-paper p-7">
+            {list.map((a, i) => (
+              <Reveal
+                key={a.title}
+                delay={((i % 4) + 1) as 1 | 2 | 3 | 4}
+                className="bg-paper p-7"
+              >
                 <p className="font-display text-xl italic">{a.title}</p>
                 <p className="mt-3 text-sm leading-relaxed text-ink-mute">
                   {a.body}
                 </p>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -213,21 +232,36 @@ export function FinalCta({
         }}
       />
       <div className="mx-auto max-w-3xl px-6 py-32 text-center sm:py-40">
-        <h2 className="font-display text-5xl leading-[0.95] tracking-tight sm:text-7xl">
-          {loggedIn ? (
-            <>
-              Dein Dashboard{" "}
-              <em className="font-display italic text-paper/70">wartet.</em>
-            </>
-          ) : (
-            <>
-              Bereit für{" "}
-              <em className="font-display italic text-paper/70">
-                bessere Handouts?
-              </em>
-            </>
-          )}
-        </h2>
+        <AnimatedText
+          as="h2"
+          className="font-display text-5xl leading-[0.95] tracking-tight sm:text-7xl"
+          lines={
+            loggedIn
+              ? [
+                  "Dein Dashboard",
+                  <em
+                    key="wartet"
+                    className="font-display italic text-paper/70"
+                  >
+                    wartet.
+                  </em>,
+                ]
+              : [
+                  "Bereit für",
+                  <em
+                    key="handouts"
+                    className="font-display italic text-paper/70"
+                  >
+                    bessere Handouts?
+                  </em>,
+                ]
+          }
+          ariaLabel={
+            loggedIn
+              ? "Dein Dashboard wartet."
+              : "Bereit für bessere Handouts?"
+          }
+        />
         <p className="mx-auto mt-6 max-w-md text-sm leading-relaxed text-paper/70">
           {loggedIn
             ? "Starte eine neue Session oder bearbeite ein bestehendes Handout."

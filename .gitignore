@@ -46,3 +46,4 @@ __pycache__/
 .tmp-*
 homepage.html
 **/tsconfig.tsbuildinfo
+*.tar.gz

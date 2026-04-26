@@ -28,6 +28,19 @@ interface Block {
 
 type SyncMode = "auto" | "hybrid" | "manual";
 
+/**
+ * Presenter-Konsole — editorial dark-glass treatment:
+ *   - Hero-Header: Breadcrumb + eyebrow "Präsentation" + italic display
+ *     Titel, Live-/Entwurf-Chip mit Puls, CTAs (Start/End + Reader).
+ *   - Stat-Trio: Public-Link, Zuschauer (Puls bei >0), Reveal-Ratio als
+ *     italic Display-Numerals.
+ *   - Segmented Steuerung / Vorschau.
+ *   - Control: Folien-Nav mit Mega-Numeral + PowerPoint-Card mit
+ *     Sky-Echo + BlockList mit Next-Up Spotlight und Reveal-Queue.
+ *
+ * Gesamte Logic (start/end, reveal/unreveal, slide-nav, sync-mode,
+ * keyboard ←/→/Space/Backspace) unverändert.
+ */
 export function SessionShell({
   handout,
   blocks,
@@ -64,7 +77,6 @@ export function SessionShell({
   );
   const currentSlide = sessionDoc?.currentSlide ?? 1;
 
-  // Hydrate syncMode from the live session record.
   useEffect(() => {
     if (sessionDoc?.syncMode) setSyncMode(sessionDoc.syncMode as SyncMode);
   }, [sessionDoc?.syncMode]);
@@ -170,7 +182,6 @@ export function SessionShell({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastRevealed, sessionId]);
 
-  // Keyboard shortcuts (only when session is live).
   useEffect(() => {
     if (!sessionId) return;
     function onKey(e: KeyboardEvent): void {
@@ -191,7 +202,7 @@ export function SessionShell({
   const live = sessionId !== null;
 
   return (
-    <div className="space-y-8">
+    <div className="mx-auto w-full max-w-6xl space-y-10">
       <SessionHeader
         handout={handout}
         live={live}
@@ -208,9 +219,12 @@ export function SessionShell({
         live={live}
       />
       {error && (
-        <p className="rounded-card border border-salmon-400/40 bg-salmon-400/10 px-4 py-3 text-sm text-salmon-300">
+        <div
+          role="alert"
+          className="rounded-card border border-salmon-400/30 bg-salmon-500/10 px-4 py-3 text-sm text-salmon-200"
+        >
           {error}
-        </p>
+        </div>
       )}
 
       <Segmented
@@ -249,6 +263,8 @@ export function SessionShell({
   );
 }
 
+/* ——— Header ——— */
+
 function SessionHeader({
   handout,
   live,
@@ -266,66 +282,110 @@ function SessionHeader({
 }): React.ReactElement {
   return (
     <header>
-      <nav className="flex items-center gap-2 text-xs text-navy-400">
-        <Link href="/dashboard" className="hover:text-white">
+      <nav className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-white/45">
+        <Link href="/dashboard" className="transition-colors hover:text-teal-300">
           Dashboard
         </Link>
-        <span>/</span>
-        <Link href={`/handouts/${handout._id}`} className="hover:text-white">
+        <span aria-hidden className="text-white/25">
+          /
+        </span>
+        <Link
+          href={`/handouts/${handout._id}`}
+          className="transition-colors hover:text-teal-300"
+        >
           {handout.title}
         </Link>
-        <span>/</span>
-        <span className="text-navy-100">Session</span>
+        <span aria-hidden className="text-white/25">
+          /
+        </span>
+        <span className="text-white/70">Session</span>
       </nav>
-      <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-3xl font-semibold tracking-tight">
-            {handout.title}
-          </h1>
-          <span
-            className={`rounded-pill px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ${
-              live
-                ? "bg-emerald-400/20 text-emerald-400"
-                : "bg-salmon-400/15 text-salmon-300"
-            }`}
-          >
-            {live ? "Live" : "Entwurf"}
-          </span>
+
+      <section className="relative mt-6 overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-br from-navy-900/80 via-navy-900/60 to-navy-950/90 p-8 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.6)] backdrop-blur-xl sm:p-10">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-1/4 -top-1/2 -z-10 h-[500px] w-[500px] rounded-full"
+          style={{
+            background: live
+              ? "radial-gradient(closest-side, rgba(52,211,153,0.22), transparent 70%)"
+              : "radial-gradient(closest-side, rgba(94,234,212,0.18), transparent 70%)",
+          }}
+        />
+
+        <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-teal-300/80">
+          Präsentation
+        </p>
+        <div className="mt-4 flex flex-wrap items-start justify-between gap-6">
+          <div className="min-w-0 flex-1">
+            <h1 className="font-display text-[clamp(2.25rem,3.5vw,3.25rem)] italic leading-[0.95] tracking-[-0.02em] text-white">
+              {handout.title}
+            </h1>
+            <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/70">
+              Folienstand, manuelle Blöcke, QR-Zugang und PowerPoint-
+              Anbindung — alles aus einer kompakten Session-Oberfläche
+              gesteuert.
+            </p>
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-3">
+            <LiveChip live={live} />
+            <div className="flex flex-wrap items-center gap-2">
+              {live ? (
+                <button
+                  onClick={onEnd}
+                  className="inline-flex items-center gap-2 rounded-pill bg-salmon-500/90 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_30px_-10px_rgba(251,113,133,0.55)] transition hover:bg-salmon-400"
+                >
+                  Session beenden
+                </button>
+              ) : (
+                <button
+                  onClick={onStart}
+                  disabled={starting}
+                  className="inline-flex items-center gap-2 rounded-pill bg-teal-400 px-5 py-2.5 text-sm font-semibold text-navy-1000 shadow-[0_10px_30px_-10px_rgba(94,234,212,0.65)] transition hover:bg-teal-300 focus:outline-none focus:ring-4 focus:ring-teal-400/30 disabled:cursor-not-allowed disabled:bg-teal-400/50"
+                >
+                  {starting ? "Starte …" : "Session starten"}
+                  <span aria-hidden>→</span>
+                </button>
+              )}
+              <a
+                href={publicUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-pill border border-white/15 bg-white/[0.04] px-5 py-2.5 text-sm font-medium text-white/85 transition hover:border-white/30 hover:bg-white/[0.08] hover:text-white"
+              >
+                Reader öffnen
+                <span aria-hidden>↗</span>
+              </a>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {live ? (
-            <button
-              onClick={onEnd}
-              className="rounded-pill bg-salmon-400 px-4 py-2 text-sm font-medium text-white hover:bg-salmon-500"
-            >
-              Session beenden
-            </button>
-          ) : (
-            <button
-              onClick={onStart}
-              disabled={starting}
-              className="rounded-pill bg-teal-400 px-5 py-2 text-sm font-semibold text-navy-1000 shadow-sm shadow-teal-400/30 hover:bg-teal-300 disabled:opacity-60"
-            >
-              {starting ? "Starte …" : "Session starten"}
-            </button>
-          )}
-          <a
-            href={publicUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-pill border border-white/15 px-4 py-2 text-sm font-medium text-white hover:border-white/40 hover:bg-white/5"
-          >
-            Handout öffnen
-          </a>
-        </div>
-      </div>
-      <p className="mt-3 max-w-2xl text-sm text-navy-100">
-        Folienstand, manuelle Blöcke, QR-Zugang und PowerPoint-Anbindung —
-        alles von einer kompakten Session-Oberfläche aus steuern.
-      </p>
+      </section>
     </header>
   );
 }
+
+function LiveChip({ live }: { live: boolean }): React.ReactElement {
+  return (
+    <span
+      className={`inline-flex items-center gap-2 rounded-pill px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.18em] ${
+        live
+          ? "border border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
+          : "border border-white/10 bg-white/[0.04] text-white/55"
+      }`}
+    >
+      <span
+        aria-hidden
+        className={`relative inline-flex h-1.5 w-1.5 rounded-full ${live ? "bg-emerald-400" : "bg-white/40"}`}
+      >
+        {live && (
+          <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400 opacity-75" />
+        )}
+      </span>
+      {live ? "Live" : "Entwurf"}
+    </span>
+  );
+}
+
+/* ——— Stats ——— */
 
 function SessionStats({
   publicUrl,
@@ -341,19 +401,21 @@ function SessionStats({
   live: boolean;
 }): React.ReactElement {
   return (
-    <div className="grid gap-3 sm:grid-cols-3">
-      <StatCard label="Öffentlicher Link">
-        <code className="block truncate font-mono text-sm">{publicUrl}</code>
+    <div className="grid gap-4 sm:grid-cols-3">
+      <StatCard label="Öffentlicher Link" span>
+        <code className="block truncate font-mono text-xs text-teal-200">
+          {publicUrl}
+        </code>
       </StatCard>
-      <StatCard label="Zuschauer">
-        <p className="text-3xl font-semibold tracking-tight">
+      <StatCard label="Zuschauer" live={live && audienceCount > 0}>
+        <p className="font-display text-5xl italic leading-none tracking-[-0.02em] text-white">
           {live ? audienceCount : 0}
         </p>
       </StatCard>
-      <StatCard label="Sichtbare Blöcke">
-        <p className="text-3xl font-semibold tracking-tight">
+      <StatCard label="Freigegeben">
+        <p className="font-display text-5xl italic leading-none tracking-[-0.02em] text-white">
           {revealedCount}
-          <span className="ml-2 text-base text-navy-400">
+          <span className="ml-2 font-sans text-base not-italic text-white/50">
             / {totalBlocks}
           </span>
         </p>
@@ -365,19 +427,37 @@ function SessionStats({
 function StatCard({
   label,
   children,
+  live,
+  span,
 }: {
   label: string;
   children: React.ReactNode;
+  live?: boolean;
+  span?: boolean;
 }): React.ReactElement {
   return (
-    <div className="rounded-card border border-white/5 bg-navy-900 px-5 py-4">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-navy-400">
-        {label}
-      </p>
-      <div className="mt-1.5">{children}</div>
+    <div
+      className={`group relative overflow-hidden rounded-[20px] border border-white/10 bg-navy-900/60 px-5 py-5 backdrop-blur-xl transition-colors hover:border-white/20 ${span ? "flex flex-col justify-center" : ""}`}
+    >
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-white/50">
+          {label}
+        </p>
+        {live && (
+          <span
+            aria-hidden
+            className="relative inline-flex h-1.5 w-1.5 rounded-full bg-teal-400"
+          >
+            <span className="absolute inset-0 animate-ping rounded-full bg-teal-400 opacity-75" />
+          </span>
+        )}
+      </div>
+      <div className="mt-3">{children}</div>
     </div>
   );
 }
+
+/* ——— Control Tab ——— */
 
 function ControlTab(props: {
   live: boolean;
@@ -396,7 +476,7 @@ function ControlTab(props: {
   onUnreveal: (id: Id<"blocks">) => void;
 }): React.ReactElement {
   return (
-    <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
+    <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
       <SlideNav {...props} />
       <PowerPointCard live={props.live} />
       <div className="lg:col-span-2">
@@ -412,6 +492,8 @@ function ControlTab(props: {
     </div>
   );
 }
+
+/* ——— Slide Nav Panel ——— */
 
 function SlideNav({
   live,
@@ -435,93 +517,92 @@ function SlideNav({
   onSyncMode: (m: SyncMode) => void;
 }): React.ReactElement {
   return (
-    <section className="rounded-card border border-white/5 bg-navy-900 p-6">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-teal-300">
+    <section className="rounded-[24px] border border-white/10 bg-navy-900/60 p-7 shadow-[0_20px_60px_-30px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+      <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-teal-300/80">
         Session-Steuerung
       </p>
-      <h2 className="mt-1 text-2xl font-semibold tracking-tight">
+      <h2 className="mt-2 font-display text-2xl italic leading-tight text-white">
         Folien-Navigation
       </h2>
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col items-center justify-center rounded-card border border-white/5 bg-navy-1000 px-4 py-5">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-navy-400">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        <div className="relative flex flex-col items-center justify-center overflow-hidden rounded-[18px] border border-white/10 bg-navy-950/60 px-4 py-7">
+          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/50">
             Aktuelle Folie
           </p>
-          <p className="mt-1 text-5xl font-semibold tracking-tight text-white">
+          <p className="mt-2 font-display text-7xl italic leading-none tracking-[-0.03em] text-white">
             {live ? currentSlide : "–"}
           </p>
-          <p className="mt-1 text-xs text-navy-400">
-            {live ? "Live übertragen" : "Session nicht aktiv"}
+          <p className="mt-2 text-[11px] text-white/45">
+            {live ? "Live übertragen" : "Nicht aktiv"}
           </p>
         </div>
-        <div className="rounded-card border border-white/5 bg-navy-1000 px-4 py-5">
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-navy-400">
-              Synchronisation
-            </p>
-            <span className="rounded-pill bg-white/5 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-navy-100">
-              {syncMode}
-            </span>
-          </div>
-          <p className="mt-1 text-base font-medium capitalize">{syncMode}</p>
+        <div className="rounded-[18px] border border-white/10 bg-navy-950/60 px-4 py-5">
+          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/50">
+            Direkt springen
+          </p>
           <div className="mt-3 flex gap-2">
             <input
               type="number"
               min={1}
-              placeholder="Folie direkt setzen"
+              placeholder="Folie"
               value={slideJumpValue}
               onChange={(e) => setSlideJumpValue(e.target.value)}
-              className="w-full rounded-pill border border-white/10 bg-navy-900 px-3 py-1.5 text-sm placeholder:text-navy-400 focus:border-teal-400"
+              className="w-full rounded-pill border border-white/10 bg-navy-900/70 px-4 py-2 text-sm text-white placeholder:text-white/30 focus:border-teal-400 focus:outline-none focus:ring-4 focus:ring-teal-400/20"
             />
             <button
               onClick={onSlideJump}
               disabled={!live}
-              className="rounded-pill border border-white/15 px-3 py-1.5 text-xs font-medium text-white hover:border-white/40 disabled:opacity-50"
+              className="rounded-pill border border-white/15 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.12em] text-white/80 transition hover:border-white/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Springen
+              Gehe zu
+            </button>
+          </div>
+          <div className="mt-5 grid grid-cols-2 gap-2">
+            <button
+              onClick={onPrev}
+              disabled={!live || currentSlide <= 1}
+              className="rounded-pill border border-white/15 px-3 py-2 text-xs font-medium text-white/80 transition hover:border-white/30 hover:bg-white/[0.04] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              ← Zurück
+            </button>
+            <button
+              onClick={onNext}
+              disabled={!live}
+              className="rounded-pill bg-teal-400 px-3 py-2 text-xs font-semibold text-navy-1000 shadow-[0_8px_24px_-10px_rgba(94,234,212,0.6)] transition hover:bg-teal-300 disabled:cursor-not-allowed disabled:bg-teal-400/50"
+            >
+              Weiter →
             </button>
           </div>
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <button
-          onClick={onPrev}
-          disabled={!live || currentSlide <= 1}
-          className="rounded-pill border border-white/15 px-4 py-2.5 text-sm font-medium text-white hover:border-white/40 hover:bg-white/5 disabled:opacity-50"
-        >
-          Zurück
-        </button>
-        <button
-          onClick={onNext}
-          disabled={!live}
-          className="rounded-pill bg-teal-400 px-4 py-2.5 text-sm font-semibold text-navy-1000 shadow-sm shadow-teal-400/30 hover:bg-teal-300 disabled:opacity-50"
-        >
-          Weiter
-        </button>
-      </div>
-
-      <div className="mt-5">
-        <p className="mb-2 text-xs text-navy-400">Sync-Modus</p>
+      <div className="mt-6 border-t border-white/10 pt-5">
+        <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.18em] text-white/55">
+          Sync-Modus
+        </p>
         <Segmented
           value={syncMode}
           onChange={onSyncMode}
           size="sm"
           options={[
-            { value: "auto", label: "Auto-Sync" },
+            { value: "auto", label: "Auto" },
             { value: "hybrid", label: "Hybrid" },
             { value: "manual", label: "Manuell" },
           ]}
         />
-        <p className="mt-2 text-xs text-navy-400">
-          Auto: nur PowerPoint-Add-in löst aus · Hybrid: beides · Manuell:
-          nur Reveal-Buttons hier.
+        <p className="mt-3 text-[11px] leading-relaxed text-white/50">
+          <span className="text-white/70">Auto:</span> nur PowerPoint-Add-in
+          löst aus · <span className="text-white/70">Hybrid:</span> beides ·{" "}
+          <span className="text-white/70">Manuell:</span> nur Reveal-Buttons
+          hier.
         </p>
       </div>
     </section>
   );
 }
+
+/* ——— PowerPoint Panel ——— */
 
 function PowerPointCard({
   live,
@@ -530,33 +611,42 @@ function PowerPointCard({
   live: boolean;
 }): React.ReactElement {
   return (
-    <section className="rounded-card border border-white/5 bg-navy-900 p-6">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-teal-300">
+    <section className="relative overflow-hidden rounded-[24px] border border-white/10 bg-navy-900/60 p-7 shadow-[0_20px_60px_-30px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-1/3 -top-1/3 -z-10 h-[300px] w-[300px] rounded-full"
+        style={{
+          background:
+            "radial-gradient(closest-side, rgba(94,234,212,0.12), transparent 70%)",
+        }}
+      />
+      <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-teal-300/80">
         PowerPoint
       </p>
-      <h2 className="mt-1 text-2xl font-semibold tracking-tight">
-        Add-in und Live-Verbindung
+      <h2 className="mt-2 font-display text-2xl italic leading-tight text-white">
+        Add-in &amp; Live-Verbindung
       </h2>
-      <p className="mt-2 text-sm text-navy-100">
+      <p className="mt-3 max-w-prose text-sm leading-relaxed text-white/70">
         Der Add-in läuft über dieselbe Web-App. Installieren, im Taskpane mit
-        deinem Slide-Handout-Account anmelden — dann erscheint{" "}
+        deinem Cue-Account anmelden — dann erscheint{" "}
         {live ? "diese Session" : "eine laufende Session"} direkt in der
         Auswahl. Folienwechsel werden automatisch gesendet.
       </p>
 
-      <div className="mt-5 flex flex-wrap gap-2">
+      <div className="mt-6 flex flex-wrap gap-2">
         <a
           href="/powerpoint-addin"
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-pill bg-teal-400 px-4 py-2 text-xs font-semibold text-navy-1000 shadow-sm shadow-teal-400/30 hover:bg-teal-300"
+          className="inline-flex items-center gap-2 rounded-pill bg-teal-400 px-4 py-2 text-xs font-semibold text-navy-1000 shadow-[0_8px_24px_-10px_rgba(94,234,212,0.55)] transition hover:bg-teal-300"
         >
           Install-Seite
+          <span aria-hidden>↗</span>
         </a>
         <a
           href="/powerpoint-addin/manifest.xml"
-          download="slide-handout-addin.xml"
-          className="rounded-pill border border-white/15 px-4 py-2 text-xs font-medium text-white hover:border-white/40 hover:bg-white/5"
+          download="cue-addin.xml"
+          className="inline-flex items-center gap-2 rounded-pill border border-white/15 bg-white/[0.04] px-4 py-2 text-xs font-medium text-white/85 transition hover:border-white/30 hover:bg-white/[0.08] hover:text-white"
         >
           Manifest herunterladen
         </a>
@@ -564,6 +654,8 @@ function PowerPointCard({
     </section>
   );
 }
+
+/* ——— Block List ——— */
 
 function BlockList({
   blocks,
@@ -581,77 +673,122 @@ function BlockList({
   onUnreveal: (id: Id<"blocks">) => void;
 }): React.ReactElement {
   return (
-    <section className="rounded-card border border-white/5 bg-navy-900 p-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold">Manuelle Reveals</h2>
-        <p className="text-xs text-navy-400">
+    <section className="rounded-[24px] border border-white/10 bg-navy-900/60 p-7 shadow-[0_20px_60px_-30px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-teal-300/80">
+            Reveal-Queue
+          </p>
+          <h2 className="mt-2 font-display text-2xl italic leading-tight text-white">
+            Manuelle Blöcke
+          </h2>
+        </div>
+        <span className="inline-flex items-center gap-2 rounded-pill border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.18em] text-white/60">
           {revealedSet.size}/{blocks.length} freigegeben
-        </p>
+        </span>
       </div>
+
       {nextToReveal && live && (
-        <div className="mt-3 flex items-center justify-between gap-3 rounded-card border border-teal-400/30 bg-teal-400/10 px-4 py-3">
-          <div>
-            <p className="text-[10px] uppercase tracking-wide text-teal-300">
-              Als nächstes
+        <div className="mt-5 flex items-center justify-between gap-4 overflow-hidden rounded-[18px] border border-teal-400/30 bg-gradient-to-r from-teal-400/15 via-teal-400/[0.08] to-transparent px-5 py-4">
+          <div className="min-w-0">
+            <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-teal-300">
+              Als Nächstes
             </p>
-            <p className="text-sm font-medium text-white">
+            <p className="mt-1 truncate text-sm font-medium text-white">
               {nextToReveal.title}
             </p>
           </div>
           <button
             onClick={() => onReveal(nextToReveal._id)}
-            className="rounded-pill bg-teal-400 px-4 py-2 text-xs font-semibold text-navy-1000 hover:bg-teal-300"
+            className="inline-flex shrink-0 items-center gap-2 rounded-pill bg-teal-400 px-4 py-2 text-xs font-semibold text-navy-1000 shadow-[0_8px_24px_-10px_rgba(94,234,212,0.6)] transition hover:bg-teal-300"
           >
-            Reveal (Leertaste)
+            Reveal
+            <kbd className="rounded bg-navy-1000/40 px-1.5 py-0.5 font-mono text-[9px] text-navy-900/80">
+              SPACE
+            </kbd>
           </button>
         </div>
       )}
-      <ul className="mt-4 space-y-2">
-        {blocks.map((b) => {
-          const revealed = revealedSet.has(b._id);
-          return (
-            <li
-              key={b._id}
-              className={`flex items-center justify-between gap-3 rounded-card border px-4 py-3 ${revealed ? "border-emerald-400/30 bg-emerald-400/5" : "border-white/5 bg-navy-1000"}`}
-            >
-              <div className="flex-1">
-                <p className="text-sm font-medium text-white">{b.title}</p>
-                <p className="mt-0.5 text-xs text-navy-400">
-                  {b.trigger}
-                  {b.trigger === "slide" && b.slideNumber
-                    ? ` · Folie ${b.slideNumber}`
-                    : ""}
-                </p>
-                {b.notes && (
-                  <p className="mt-2 whitespace-pre-wrap rounded border-l-2 border-teal-400/60 bg-teal-400/5 px-2 py-1 text-xs italic text-navy-200">
-                    {b.notes}
+
+      {blocks.length === 0 ? (
+        <p className="mt-6 rounded-[18px] border border-dashed border-white/10 bg-navy-950/40 px-6 py-10 text-center text-sm italic text-white/45">
+          Keine manuellen Blöcke in diesem Handout.
+        </p>
+      ) : (
+        <ul className="mt-5 space-y-2.5">
+          {blocks.map((b, i) => {
+            const revealed = revealedSet.has(b._id);
+            return (
+              <li
+                key={b._id}
+                className={`group flex items-center gap-4 rounded-[16px] border px-4 py-4 transition-colors ${
+                  revealed
+                    ? "border-emerald-400/30 bg-emerald-400/[0.08]"
+                    : "border-white/10 bg-navy-950/50 hover:border-white/20"
+                }`}
+              >
+                <span className="shrink-0 font-mono text-[10px] tracking-[0.2em] text-white/40">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-white">
+                    {b.title}
                   </p>
+                  <p className="mt-0.5 text-[11px] text-white/50">
+                    <span className="uppercase tracking-[0.12em]">
+                      {b.trigger}
+                    </span>
+                    {b.trigger === "slide" && b.slideNumber
+                      ? ` · Folie ${b.slideNumber}`
+                      : ""}
+                  </p>
+                  {b.notes && (
+                    <p className="mt-2 whitespace-pre-wrap rounded-[8px] border-l-2 border-teal-400/60 bg-teal-400/5 px-3 py-1.5 text-[11px] italic leading-relaxed text-white/75">
+                      {b.notes}
+                    </p>
+                  )}
+                </div>
+                {revealed ? (
+                  <button
+                    onClick={() => onUnreveal(b._id)}
+                    disabled={!live}
+                    className="shrink-0 rounded-pill border border-white/15 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.12em] text-white/75 transition hover:border-white/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Verbergen
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => onReveal(b._id)}
+                    disabled={!live}
+                    className="shrink-0 rounded-pill bg-teal-400 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-navy-1000 shadow-[0_6px_18px_-6px_rgba(94,234,212,0.5)] transition hover:bg-teal-300 disabled:cursor-not-allowed disabled:bg-teal-400/50"
+                  >
+                    Reveal
+                  </button>
                 )}
-              </div>
-              {revealed ? (
-                <button
-                  onClick={() => onUnreveal(b._id)}
-                  disabled={!live}
-                  className="rounded-pill border border-white/15 px-3 py-1.5 text-xs font-medium text-white hover:border-white/40 hover:bg-white/5 disabled:opacity-50"
-                >
-                  Verbergen
-                </button>
-              ) : (
-                <button
-                  onClick={() => onReveal(b._id)}
-                  disabled={!live}
-                  className="rounded-pill bg-teal-400 px-3 py-1.5 text-xs font-semibold text-navy-1000 hover:bg-teal-300 disabled:opacity-50"
-                >
-                  Reveal
-                </button>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {live && (
+        <p className="mt-5 text-[11px] text-white/40">
+          Tastatur:{" "}
+          <kbd className="mx-1 rounded border border-white/10 bg-white/[0.03] px-1.5 py-0.5 font-mono text-[10px]">Space</kbd>{" "}
+          oder{" "}
+          <kbd className="mx-1 rounded border border-white/10 bg-white/[0.03] px-1.5 py-0.5 font-mono text-[10px]">→</kbd>{" "}
+          revealt ·{" "}
+          <kbd className="mx-1 rounded border border-white/10 bg-white/[0.03] px-1.5 py-0.5 font-mono text-[10px]">←</kbd>{" "}
+          oder{" "}
+          <kbd className="mx-1 rounded border border-white/10 bg-white/[0.03] px-1.5 py-0.5 font-mono text-[10px]">⌫</kbd>{" "}
+          nimmt zurück.
+        </p>
+      )}
     </section>
   );
 }
+
+/* ——— Preview Tab ——— */
 
 function PreviewTab({
   blocks,
@@ -662,23 +799,40 @@ function PreviewTab({
 }): React.ReactElement {
   if (!live) {
     return (
-      <p className="rounded-card border border-dashed border-white/10 px-8 py-12 text-center text-navy-400">
-        Vorschau zeigt, was das Publikum sieht — sobald die Session läuft.
-      </p>
+      <div className="rounded-[24px] border border-dashed border-white/10 bg-navy-900/40 px-8 py-16 text-center backdrop-blur-xl">
+        <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-white/40">
+          Vorschau
+        </p>
+        <p className="mt-3 font-display text-xl italic text-white/65">
+          Starte die Session, um zu sehen, was dein Publikum sieht.
+        </p>
+      </div>
     );
   }
   if (blocks.length === 0) {
     return (
-      <p className="rounded-card border border-dashed border-white/10 px-8 py-12 text-center text-navy-400">
-        Noch keine Blöcke sichtbar.
-      </p>
+      <div className="rounded-[24px] border border-dashed border-white/10 bg-navy-900/40 px-8 py-16 text-center backdrop-blur-xl">
+        <p className="font-display text-xl italic text-white/65">
+          Noch keine Blöcke sichtbar.
+        </p>
+        <p className="mt-2 text-xs text-white/45">
+          Nutze{" "}
+          <kbd className="mx-1 rounded border border-white/10 bg-white/[0.03] px-1.5 py-0.5 font-mono text-[10px]">Space</kbd>{" "}
+          oder klicke „Reveal".
+        </p>
+      </div>
     );
   }
   return (
-    <div className="space-y-4">
-      {blocks.map((b) => (
-        <BlockRenderer key={b._id} block={b} />
-      ))}
+    <div className="rounded-[24px] border border-white/10 bg-navy-950/40 p-6 backdrop-blur-xl sm:p-8">
+      <p className="mb-5 text-[10px] font-medium uppercase tracking-[0.22em] text-white/40">
+        Live-Vorschau · was das Publikum sieht
+      </p>
+      <div className="space-y-5">
+        {blocks.map((b) => (
+          <BlockRenderer key={b._id} block={b} />
+        ))}
+      </div>
     </div>
   );
 }

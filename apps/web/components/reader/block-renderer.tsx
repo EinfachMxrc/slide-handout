@@ -44,6 +44,43 @@ const fontSizeClass: Record<RenderableBlock["fontSize"], string> = {
   xl: "text-2xl",
 };
 
+/**
+ * Shared editorial card surface for reader blocks: hairline border,
+ * soft elevation, sky-white in light / navy-glass in dark. Padding
+ * erhöht auf 7/8 für bessere Atmung.
+ */
+const cardBase =
+  "rounded-[20px] border border-navy-200/70 bg-white/90 shadow-[0_2px_16px_-6px_rgba(15,23,42,0.08)] backdrop-blur-sm dark:border-navy-800/60 dark:bg-navy-900/70 dark:shadow-[0_20px_60px_-30px_rgba(0,0,0,0.5)]";
+
+/**
+ * Editorial heading — italic display font, subtle teal accent bar links
+ * vor dem Titel als rhythmischer Anker. `onImage` tone für background-
+ * layout (white text + teal-300 bar).
+ */
+function BlockHeading({
+  children,
+  tone = "default",
+}: {
+  children: React.ReactNode;
+  tone?: "default" | "onImage";
+}): React.ReactElement {
+  return (
+    <h2
+      className={`mb-4 flex items-center gap-3 font-display text-xl italic leading-snug tracking-tight ${
+        tone === "onImage" ? "text-white" : "text-navy-900 dark:text-navy-50"
+      }`}
+    >
+      <span
+        aria-hidden
+        className={`inline-block h-4 w-[3px] rounded-full ${
+          tone === "onImage" ? "bg-teal-300" : "bg-teal-500 dark:bg-teal-400"
+        }`}
+      />
+      <span>{children}</span>
+    </h2>
+  );
+}
+
 function resolveImage(block: RenderableBlock): string | null {
   if (block.imageUrl && /^https:\/\//.test(block.imageUrl)) return block.imageUrl;
   if (block.imageS3Key) {
@@ -77,7 +114,7 @@ export function BlockRenderer({
 
   const Image =
     img !== null ? (
-      <figure className="my-0 overflow-hidden rounded-card">
+      <figure className="my-0 overflow-hidden rounded-[14px]">
         {/* Plain <img> — user-pasted hosts not in next/image remotePatterns. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -87,7 +124,7 @@ export function BlockRenderer({
           className="w-full object-cover"
         />
         {block.imageCaption && (
-          <figcaption className="mt-1 px-1 text-xs text-navy-400">
+          <figcaption className="mt-2 px-1 text-[11px] italic text-navy-500 dark:text-navy-300/70">
             {block.imageCaption}
           </figcaption>
         )}
@@ -110,7 +147,7 @@ export function BlockRenderer({
             }
             return (
               <code
-                className="rounded bg-navy-100 px-1 py-0.5 font-mono text-xs dark:bg-navy-800"
+                className="rounded bg-navy-100 px-1.5 py-0.5 font-mono text-[0.85em] text-navy-800 dark:bg-navy-800/80 dark:text-navy-100"
                 {...props}
               >
                 {children}
@@ -131,16 +168,14 @@ export function BlockRenderer({
   if (img && block.imagePosition === "background") {
     return (
       <article
-        className={`relative overflow-hidden rounded-card p-6 text-white shadow-sm ${layoutArticle[block.layout]}`}
+        className={`relative overflow-hidden rounded-[20px] p-8 text-white shadow-[0_20px_60px_-20px_rgba(0,0,0,0.35)] ${layoutArticle[block.layout]}`}
         style={{
-          backgroundImage: `linear-gradient(rgba(10,20,38,0.55), rgba(10,20,38,0.55)), url("${img}")`,
+          backgroundImage: `linear-gradient(rgba(10,20,38,0.72), rgba(10,20,38,0.55)), url("${img}")`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
       >
-        <h2 className="mb-3 text-xl font-semibold tracking-tight">
-          {block.title}
-        </h2>
+        <BlockHeading tone="onImage">{block.title}</BlockHeading>
         {Content}
       </article>
     );
@@ -150,13 +185,11 @@ export function BlockRenderer({
   if (img && block.imagePosition === "full") {
     return (
       <article
-        className={`overflow-hidden rounded-card border border-navy-100 bg-white shadow-sm dark:border-navy-700 dark:bg-navy-900 ${layoutArticle[block.layout]}`}
+        className={`overflow-hidden ${cardBase} ${layoutArticle[block.layout]}`}
       >
         {Image}
-        <div className="p-6">
-          <h2 className="mb-3 text-xl font-semibold tracking-tight">
-            {block.title}
-          </h2>
+        <div className="p-7 sm:p-8">
+          <BlockHeading>{block.title}</BlockHeading>
           {Content}
         </div>
       </article>
@@ -167,13 +200,11 @@ export function BlockRenderer({
   if (img && (block.imagePosition === "left" || block.imagePosition === "right")) {
     return (
       <article
-        className={`grid grid-cols-1 gap-6 rounded-card border border-navy-100 bg-white p-6 shadow-sm sm:grid-cols-[minmax(0,200px)_1fr] dark:border-navy-700 dark:bg-navy-900 ${layoutArticle[block.layout]} ${block.imagePosition === "right" ? "sm:[grid-template-columns:1fr_minmax(0,200px)]" : ""}`}
+        className={`grid grid-cols-1 gap-6 p-7 sm:grid-cols-[minmax(0,220px)_1fr] sm:p-8 ${cardBase} ${layoutArticle[block.layout]} ${block.imagePosition === "right" ? "sm:[grid-template-columns:1fr_minmax(0,220px)]" : ""}`}
       >
         {block.imagePosition === "left" && Image}
         <div>
-          <h2 className="mb-3 text-xl font-semibold tracking-tight">
-            {block.title}
-          </h2>
+          <BlockHeading>{block.title}</BlockHeading>
           {Content}
         </div>
         {block.imagePosition === "right" && Image}
@@ -184,14 +215,12 @@ export function BlockRenderer({
   // Default: top / bottom image (or no image).
   return (
     <article
-      className={`rounded-card border border-navy-100 bg-white p-6 shadow-sm dark:border-navy-700 dark:bg-navy-900 ${layoutArticle[block.layout]} ${layoutWrapper[block.layout]}`}
+      className={`p-7 sm:p-8 ${cardBase} ${layoutArticle[block.layout]} ${layoutWrapper[block.layout]}`}
     >
-      <h2 className="mb-3 text-xl font-semibold tracking-tight">
-        {block.title}
-      </h2>
-      {img && block.imagePosition === "top" && <div className="mb-4">{Image}</div>}
+      <BlockHeading>{block.title}</BlockHeading>
+      {img && block.imagePosition === "top" && <div className="mb-5">{Image}</div>}
       {Content}
-      {img && block.imagePosition === "bottom" && <div className="mt-4">{Image}</div>}
+      {img && block.imagePosition === "bottom" && <div className="mt-5">{Image}</div>}
     </article>
   );
 }

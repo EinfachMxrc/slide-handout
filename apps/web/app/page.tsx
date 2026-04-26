@@ -1,6 +1,8 @@
 import { getSession } from "#/lib/auth/session";
 import { LandingNav } from "#/components/landing/nav";
-import { Hero } from "#/components/landing/hero";
+import { AirIntroScene } from "#/components/landing/air-intro-scene";
+import { SmoothScroll } from "#/components/landing/smooth-scroll";
+import { FeatureTabs } from "#/components/landing/feature-tabs";
 import {
   Audiences,
   Features,
@@ -15,8 +17,10 @@ export default async function LandingPage(): Promise<React.ReactElement> {
 
   return (
     <div className="min-h-screen bg-paper text-ink">
+      <SmoothScroll />
       <LandingNav loggedIn={loggedIn} email={session?.email} />
-      <Hero loggedIn={loggedIn} />
+      <AirIntroScene loggedIn={loggedIn} />
+      <FeatureTabs />
       <HowItWorks />
       <Features />
       <Audiences />

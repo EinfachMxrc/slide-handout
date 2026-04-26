@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
-import { Inter, Instrument_Serif } from "next/font/google";
+import { Inter, Instrument_Serif, Pacifico } from "next/font/google";
 import { ConvexClientProvider } from "#/components/providers/convex-provider";
 import { ThemeProvider } from "#/components/providers/theme-provider";
 import "./globals.css";
@@ -16,6 +16,13 @@ const display = Instrument_Serif({
   subsets: ["latin", "latin-ext"],
   variable: "--font-display",
   display: "swap",
+});
+const pacifico = Pacifico({
+  weight: "400",
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-pacifico",
+  display: "swap",
+  preload: true,
 });
 
 export const metadata: Metadata = {
@@ -44,7 +51,7 @@ export default async function RootLayout({
     <html
       lang="de"
       suppressHydrationWarning
-      className={`${inter.variable} ${display.variable}`}
+      className={`${inter.variable} ${display.variable} ${pacifico.variable}`}
     >
       <body>
         <ThemeProvider>

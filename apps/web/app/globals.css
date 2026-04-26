@@ -58,6 +58,15 @@
 
   --radius-card: 0.875rem;
   --radius-pill: 9999px;
+
+  /* Air-Animation-Tokens — verbatim aus air.inc CSS extrahiert.
+   * Signature-Easing für alle Reveals/Tabs/Card-Hovers. */
+  --ease-air:        cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-air-inout:  cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-air-in:     cubic-bezier(0.32, 0, 0.67, 0);
+  --dur-reveal:      0.8s;
+  --dur-tab:         0.6s;
+  --dur-icon:        0.3s;
 }
 
 @variant dark (&:where(.dark, .dark *));
@@ -127,19 +136,149 @@
   filter: drop-shadow(0 4px 24px rgba(255, 255, 255, 0.25));
 }
 
-/* SVG-Cloud-Drift — sanfte horizontale Bewegung der Wolken-Layer. */
-@keyframes cloud-drift {
-  from { transform: translate3d(-2%, 0, 0); }
-  to   { transform: translate3d(2%, 0, 0); }
+/* SVG-Cloud-Drift — drei unabhängige Layer mit spürbarer horizontaler
+ * Bewegung + dezentem Y-Drift + Scale-Breathing für "lebendigen Himmel". */
+@keyframes cloud-drift-slow {
+  0%   { transform: translate3d(-9%, -1%, 0) scale(1.02); }
+  50%  { transform: translate3d(4%, 1%, 0) scale(1.04); }
+  100% { transform: translate3d(9%, -0.5%, 0) scale(1); }
 }
-.cloud-drift-slow { animation: cloud-drift 60s ease-in-out infinite alternate; }
-.cloud-drift-mid  { animation: cloud-drift 40s ease-in-out infinite alternate; }
-.cloud-drift-fast { animation: cloud-drift 24s ease-in-out infinite alternate; }
+@keyframes cloud-drift-mid {
+  0%   { transform: translate3d(7%, 0.5%, 0) scale(1); }
+  50%  { transform: translate3d(-5%, -1%, 0) scale(1.03); }
+  100% { transform: translate3d(-8%, 0.5%, 0) scale(1); }
+}
+@keyframes cloud-drift-fast {
+  0%   { transform: translate3d(-11%, 1%, 0) scale(1.02); }
+  50%  { transform: translate3d(8%, -0.5%, 0) scale(1); }
+  100% { transform: translate3d(12%, 0.5%, 0) scale(1.03); }
+}
+@keyframes cloud-drift-wisp {
+  0%   { transform: translate3d(-14%, -0.5%, 0); opacity: 0.55; }
+  50%  { transform: translate3d(6%, 1%, 0); opacity: 0.85; }
+  100% { transform: translate3d(14%, -0.5%, 0); opacity: 0.55; }
+}
+/* animation-delay: negativ → Layer startet schon mitten im Animations-
+ * zyklus, also sofort sichtbar in Bewegung (kein "Standstill-Start"). */
+.cloud-drift-slow {
+  animation: cloud-drift-slow 34s ease-in-out infinite alternate;
+  animation-delay: -14s;
+}
+.cloud-drift-mid  {
+  animation: cloud-drift-mid 23s ease-in-out infinite alternate;
+  animation-delay: -9s;
+}
+.cloud-drift-fast {
+  animation: cloud-drift-fast 15s ease-in-out infinite alternate;
+  animation-delay: -6s;
+}
+.cloud-drift-wisp {
+  animation: cloud-drift-wisp 10s ease-in-out infinite alternate;
+  animation-delay: -3s;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .cloud-drift-slow,
   .cloud-drift-mid,
-  .cloud-drift-fast { animation: none; }
+  .cloud-drift-fast,
+  .cloud-drift-wisp { animation: none; }
+}
+
+/* === Air-Keyframes — verbatim aus air.inc/_next/static/css extrahiert ===
+ * Diese Tokens stehen allen Components zur Verfügung — alle Reveals, Tabs,
+ * Cards, Marquees referenzieren ausschließlich diese Werte (DRY). */
+
+/* Marquee-Loop — endlose horizontale Logo-Reihe, wie Air "Used by". */
+@keyframes air-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(var(--loop-point, -50%)); }
+}
+
+/* CTA-Border — rotierender Conic-Gradient als Akzent-Border. */
+@keyframes air-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Tab-Glow — Pulse, der einmal pro Tab-Wechsel überm aktiven Tab läuft. */
+@keyframes air-glow {
+  0%   { opacity: 0; }
+  10%  { opacity: 1; }
+  40%  { opacity: 0.4; }
+  60%  { opacity: 0.4; }
+  100% { opacity: 0; }
+}
+
+/* Tab-Content — fadeIn beim Tab-Wechsel. */
+@keyframes air-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Reveal-Pattern — Sections opacity+translateY+blur in den finalen Zustand.
+ * Wird über data-reveal/data-revealed Attribute getriggert (siehe useReveal). */
+[data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 1.5rem, 0);
+  filter: blur(6px);
+  transition:
+    opacity var(--dur-reveal) var(--ease-air),
+    transform var(--dur-reveal) var(--ease-air),
+    filter var(--dur-reveal) var(--ease-air);
+  will-change: opacity, transform, filter;
+}
+[data-reveal][data-revealed="true"] {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  filter: blur(0px);
+}
+[data-reveal-delay="1"] { transition-delay: 0.08s; }
+[data-reveal-delay="2"] { transition-delay: 0.16s; }
+[data-reveal-delay="3"] { transition-delay: 0.24s; }
+[data-reveal-delay="4"] { transition-delay: 0.32s; }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+}
+
+/* AnimatedText — Zeilen-Kaskade-Reveal nach air.inc-Muster.
+ * Jede `.animated-line` bekommt eine CSS-Variable `--progress` (0 → 1)
+ * per rAF-Loop, daraus werden zwei synchrone Effekte abgeleitet:
+ *   1. Mask-Gradient: wischt Text von unten nach oben in die Sichtbarkeit
+ *   2. TranslateY am Inner-Span: Text steigt gleichzeitig hoch
+ * Ergebnis: weicher "steigt-hoch-und-enthüllt"-Look ohne Layout-Shift. */
+.animated-line {
+  --p: var(--progress, 0);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent calc(100% - var(--p) * 150%),
+    black calc(100% - var(--p) * 100%)
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent calc(100% - var(--p) * 150%),
+    black calc(100% - var(--p) * 100%)
+  );
+  will-change: mask-image;
+}
+.animated-line-inner {
+  transform: translateY(calc(100% - var(--progress, 0) * 100%));
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animated-line {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .animated-line-inner {
+    transform: none;
+  }
 }
 
 /* Reader-Block-Pulse beim Wieder-Fokussieren des Tabs */

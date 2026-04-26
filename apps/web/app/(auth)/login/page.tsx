@@ -1,15 +1,21 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
 import { signIn } from "#/auth";
-import { Card } from "#/components/ui/card";
-import { Input } from "#/components/ui/input";
-import { Button } from "#/components/ui/button";
+import {
+  AuthShell,
+  Field,
+  authInputClass,
+  authSubmitClass,
+} from "#/components/auth/auth-shell";
 
 /**
- * Login-Seite — 100% Server-Component + Server-Action.
- * Auth.js `signIn()` läuft auf dem Server, setzt das JWT-Cookie, und
+ * Login — 100 % Server-Component + Server-Action.
+ * Auth.js `signIn()` läuft auf dem Server, setzt das JWT-Cookie und
  * redirectet zurück zur `next`-URL (oder `/dashboard`).
+ *
+ * Editorial-Treatment: 2-Spalten-AuthShell, dunkel geframed, Glass-Card
+ * mit pill-Inputs + teal Submit. Keine Titelkarte mehr — die Spalte links
+ * trägt die Botschaft.
  */
 export default async function LoginPage({
   searchParams,
@@ -38,54 +44,71 @@ export default async function LoginPage({
     }
   }
 
+  const errorMessage =
+    errorCode === "CredentialsSignin"
+      ? "E-Mail oder Passwort stimmt nicht."
+      : errorCode
+        ? "Anmelden fehlgeschlagen."
+        : undefined;
+
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
-      <Card>
-        <h1 className="text-2xl font-semibold">Anmelden</h1>
-        <p className="mt-1 text-sm text-navy-700 dark:text-navy-100">
-          Mit deinem Slide-Handout-Account.
-        </p>
-        <form action={login} className="mt-6 space-y-4">
-          <div>
-            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-navy-400">
-              E-Mail
-            </label>
-            <Input
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-navy-400">
-              Passwort
-            </label>
-            <Input
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-            />
-          </div>
-          {errorCode && (
-            <p className="text-sm text-red-500">
-              {errorCode === "CredentialsSignin"
-                ? "E-Mail oder Passwort stimmt nicht."
-                : "Anmelden fehlgeschlagen."}
-            </p>
-          )}
-          <Button type="submit" className="w-full">
+    <AuthShell
+      eyebrow="Willkommen zurück"
+      titleLead="Melde dich an."
+      titleAccent="Dein Auftritt wartet."
+      lede="Cue erinnert sich an jede Szene, jeden Takt, jede Folie — du musst nur loslegen."
+      bullets={[
+        "Handouts synchron zu deiner Präsentation freigeben.",
+        "Live-Reveal, QR-Pairing, Hybrid-Modus — alles eingebaut.",
+        "Dark-Mode, Accent-Farben, Print-Ready PDF per Klick.",
+      ]}
+      footerPrompt="Noch kein Account?"
+      footerHref="/register"
+      footerLinkLabel="Kostenlos registrieren"
+      topRightHref="/register"
+      topRightLabel="Registrieren"
+    >
+      <form action={login} className="space-y-6" noValidate>
+        <div className="space-y-1">
+          <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-teal-300/80">
             Anmelden
-          </Button>
-        </form>
-        <p className="mt-4 text-center text-sm text-navy-700 dark:text-navy-100">
-          Noch kein Account?{" "}
-          <Link href="/register" className="text-teal-400 hover:underline">
-            Registrieren
-          </Link>
-        </p>
-      </Card>
-    </main>
+          </p>
+          <h2 className="font-display text-2xl italic leading-tight text-white">
+            Mit deinem Cue-Account
+          </h2>
+        </div>
+        <Field label="E-Mail">
+          <input
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            placeholder="du@beispiel.de"
+            className={authInputClass}
+          />
+        </Field>
+        <Field label="Passwort">
+          <input
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            required
+            minLength={10}
+            className={authInputClass}
+          />
+        </Field>
+        {errorMessage && (
+          <div
+            role="alert"
+            className="rounded-card border border-salmon-400/30 bg-salmon-500/10 px-4 py-3 text-sm text-salmon-200"
+          >
+            {errorMessage}
+          </div>
+        )}
+        <button type="submit" className={authSubmitClass}>
+          Anmelden →
+        </button>
+      </form>
+    </AuthShell>
   );
 }

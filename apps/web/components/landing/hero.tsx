@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SkyBackground } from "./sky-background";
 import { DemoButton } from "./demo-button";
+import { HeroWordmark } from "./hero-wordmark";
 
 /**
  * Air-inspirierter Hero — Full-Bleed Sky + riesiger Italic-Wordmark.
@@ -24,13 +25,10 @@ export function Hero({
       <div className="relative mx-auto flex min-h-[100svh] max-w-7xl flex-col px-6">
         {/* Sticky-feel: das Wort bleibt vertikal mittig, CTAs hängen unten. */}
         <div className="flex flex-1 items-center justify-center pt-24">
-          <h1
-            className="glass-display select-none text-center"
-            style={{ fontSize: "clamp(6rem, 22vw, 18rem)" }}
-          >
+          <HeroWordmark>
             Handout
             <span aria-hidden className="inline-block w-[0.05em]" />
-          </h1>
+          </HeroWordmark>
         </div>
 
         <div className="pb-16 sm:pb-24">

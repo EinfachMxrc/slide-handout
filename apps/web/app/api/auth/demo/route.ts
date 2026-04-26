@@ -68,11 +68,17 @@ export async function POST(req: Request): Promise<Response> {
     return NextResponse.json({ error: "not_a_demo_user" }, { status: 500 });
   }
 
-  // 2. Inhalt seeden — idempotent.
+  // 2. Inhalt seeden. `?fresh=1` erzwingt Reset+Reseed (Seed-Material wurde
+  //    geändert, Demo-User muss frischen Content bekommen).
+  const fresh = new URL(req.url).searchParams.get("fresh") === "1";
   try {
-    await convex.mutation(api.demo.seedIfEmpty, { userId: user._id });
+    if (fresh) {
+      await convex.mutation(api.demo.reseed, { userId: user._id });
+    } else {
+      await convex.mutation(api.demo.seedIfEmpty, { userId: user._id });
+    }
   } catch (err) {
-    logApiError("auth.demo.seed", err, { userId: user._id });
+    logApiError("auth.demo.seed", err, { userId: user._id, fresh });
   }
 
   // 3. Via Auth.js einloggen.
